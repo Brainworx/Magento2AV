@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Brainworx_Medipimsync::medipim" title="Medipim" module="brainworx_medipimsync" 
+        sortOrder="50" parent="Magento_Backend::content" resource="Brainworx_Medipimsync::medipim" />
+        <add id="Brainworx_Medipimsync::sync" title="Synced Entities" module="brainworx_medipimsync"
+         sortOrder="0" parent="Brainworx_Medipimsync::medipim" action="medipimsync/sync" 
+         resource="Brainworx_Medipimsync::sync"/>
+    </menu>
+</config>

@@ -11,7 +11,14 @@
 /CONTRIBUTING.md
 /COPYING.txt
 /Gruntfile.js.sample
-/var/
+/var/composer_home/
+/var/di/
+/var/generation/
+/var/log/
+/var/page_cache/
+/var/report/
+/var/tmp/
+/var/view/preprocessed/
 /bin/
 /dev/
 /lib/
