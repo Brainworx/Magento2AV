@@ -6,27 +6,54 @@ use Magento\Framework\App\ResourceConnection;
 use Magento\Store\Model\StoreManagerInterface;
 use Psr\Log\LoggerInterface;
 use Zend\Validator\Explode;
+use Magento\Tax\Model\ClassModel;
+use Magento\Catalog\Model\Product\Visibility;
+use Magento\Catalog\Model\Product\Type;
+use Magento\Catalog\Api\ProductRepositoryInterface;
+use Magento\Catalog\Api\CategoryRepositoryInterface;
+use Magento\Tax\Api\TaxClassRepositoryInterface;
+use Magento\Framework\Api\FilterBuilder;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Tax\Api\TaxClassManagementInterface;
 
-
+//TODO add rest api to execute this sync
 class Save extends \Magento\Backend\App\Action
 {
 	protected  $_resource;
 	protected $_storemanager;
 	protected $_logger;
+	//required to query tax class
+	protected $_filterBuilder;
+	protected $_taxClassRepository;
+	protected $_searchCriteriaBuilder;
+	
+	protected $_productRepo;
+	protected $_catsRepo;
 	
 	var $id = 123; // your api user id
 	var $key = "IGuh829DevvUZYVwNnTDTvFPkLdm08EhGcUG72Y20peYhStZ2Ugj7AnsRTXZgf8g"; // your secret api key
-	
+	var $mediaUrl = "https://media.medipim.be/";
 	/**
 	 * @param Action\Context $context
 	 */
 	public function __construct(Action\Context $context, 
 			ResourceConnection $resource, 
-			StoreManagerInterface $storemanager, LoggerInterface $logger )
+			StoreManagerInterface $storemanager, LoggerInterface $logger,
+			FilterBuilder $filterBuilder,
+			TaxClassRepositoryInterface $taxClassRepository,
+			SearchCriteriaBuilder $searchCriteriaBuilder,
+			ProductRepositoryInterface $productrepo,
+			CategoryRepositoryInterface $catsrepo)
 	{
 		$this->_resource = $resource;
 		$this->_storemanager = $storemanager;
 		$this->_logger = $logger;
+		$this->_filterBuilder = $filterBuilder;
+		$this->_searchCriteriaBuilder = $searchCriteriaBuilder;
+		$this->_taxClassRepository = $taxClassRepository;
+		$this->_productRepo = $productrepo;
+		$this->_catsRepo = $catsrepo;
+		
 		parent::__construct($context);
 	}
 
@@ -85,6 +112,9 @@ class Save extends \Magento\Backend\App\Action
 					$model->save();
 					$this->_logger->debug("Sync of categories completed");
 				}elseif ($data['entity']=="PROD"){
+					$model->setQtyUpdt(0);
+					$model->setQtyInsrt(0);
+					$model->setQtyTot(0);
 					$all_cnks = self::loadProductsToSync();
 					$files = array();
 					foreach($all_cnks as $cnks_group){
@@ -93,7 +123,7 @@ class Save extends \Magento\Backend\App\Action
 						$this->_logger->info("CNKS retrieved from Medipim for: ".$file);
 					}
 					foreach($files as $file){
-						//todo insert/update
+						self::loadProducts($file, $model);
 						$this->_logger->info("CNKS synced with Medipim for: ".$file);
 					}
 				}
@@ -175,7 +205,8 @@ class Save extends \Magento\Backend\App\Action
 			$insert = false;
 			$id = self::loadCategoryIDByMedipimId((integer)$incat->consumer_category_id);
 			if($id!=false){
-				$category = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($id);
+				//$category = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($id);
+				$category = $this->_catsRepo->get($id);
 				$lastupdated = strtotime($category->getLastUpdatedAt());
 				$inputlastupdated = strtotime($incat->last_updated_at);
 				if($lastupdated != $inputlastupdated){
@@ -215,7 +246,7 @@ class Save extends \Magento\Backend\App\Action
 				$category->setDisplayMode('PRODUCTS');
 				$category->setStoreId($this->_storemanager->getStore('nl')->getId());
 				$category->setAttributeSetId($this->_objectManager->get('Magento\Catalog\Model\Category')->getResource()->getEntityType()->getDefaultAttributeSetId());
-				
+				//$category->setIncludeInMenu(true);
 			
 				$pcategory;
 				$category->setPath('1');
@@ -235,10 +266,11 @@ class Save extends \Magento\Backend\App\Action
 					$category->setPath('1/2'.(!empty($id)?'/'.$id:''));
 					$this->_logger->info("Category parent not found at insert of ".$category->getName());
 				}
-				$category->save();
+				
 			}
 			
 			if($update || $insert){
+				$this->_catsRepo->save($category);
 				
 				//insert custom column values
 				$connection = $this->_resource->getConnection(\Magento\Framework\App\ResourceConnection::DEFAULT_CONNECTION);
@@ -250,7 +282,8 @@ class Save extends \Magento\Backend\App\Action
 						array('entity_id = ?' => $category->getEntityId() ));
 				
 				//setup all languages
-				$cat = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($category->getEntityId());
+				//$cat = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($category->getEntityId());
+				$cat = $category;
 				$cat->setStoreId($this->_storemanager->getStore('nl')->getId())->setName((string)$incat->translation_nl)->save();
 				
 				$cat->setStoreId($this->_storemanager->getStore('fr')->getId())->setName((string)$incat->translation_fr)->save();
@@ -341,6 +374,8 @@ class Save extends \Magento\Backend\App\Action
 			}
 			fwrite($catfile, "</categories></catdoc>");
 			
+			fclose($catfile);
+			
 			return $filename;
 	
 		}catch (Exception $e){
@@ -367,8 +402,9 @@ class Save extends \Magento\Backend\App\Action
 			
 			$data=array("cnks"=>$cnks,"modified_since"=>$lastmodified);
 			$data_string = json_encode($data);
+			$prodfilename = BP."/var/medipimsync/products".time().".xml";
 			
-			$prodfile = fopen(BP."/var/medipimsync/products".time().".xml","w");
+			$prodfile = fopen($prodfilename,"w");
 				
 			//returns unique cnks numbers
 			$response = file_get_contents($purl, false, stream_context_create(array(
@@ -386,13 +422,14 @@ class Save extends \Magento\Backend\App\Action
 			$categories=array();
 			$new_categories=array();
 				
-			fwrite($prodfile, "<products>");
-				
+			fwrite($prodfile, "<prod_doc><products>");
+			
 			foreach($productList->products as $product){
 				$newProductData = "<product>";
 				foreach($datalabel as $label){
 					if(property_exists($product,$label)){
 						$mgt_label = $label;
+						
 						if($label == "cnk"){
 							$mgt_label = "sku";
 						}elseif ($label =="status"){
@@ -420,34 +457,55 @@ class Save extends \Magento\Backend\App\Action
 				if(property_exists($product,"public_price_apb")){
 					$newProductData .="<price>".$product->public_price_apb."</price>";
 				}else{
-					$this->_logger->info("No price found in Medipim for ".$product->cnk);
+					$this->_logger->info("No APB price found in Medipim for ".$product->cnk);
+					if(property_exists($product,"public_price_febelco")&&$product->public_price_febelco!=0){
+						$newProductData .="<price>".$product->public_price_febelco."</price>";
+					}else{
+						$newProductData .="<price>0</price>";
+						$this->_logger->error("No price found in Medipim for ".$product->cnk);
+					}
+				}
+				//check stock Febelco
+				if(!isset($product->public_price_febelco)||$product->public_price_febelco==0){
+					$this->_logger->info("No febelco price/stock for ".$product->cnk." ".$product->name);
 				}
 	
 				//set the last synced date
 				$newProductData.="<last_sync>".date("Y-m-d")."</last_sync>";
-	
+				//store unique values only
 				foreach($product->consumer_categories as $cat){
-					$categories[]=$cat->consumer_category_id;
+					if(! in_array($cat->consumer_category_id,$categories)){
+						$categories[]=$cat->consumer_category_id;
+					}
 				}
+				
 				$newProductData.="<mp_categories>".implode(",", $categories)."</mp_categories>"; //test
 				
 				//TODO add image lib path
 				if(property_exists($product,'media')){
 					if(property_exists($product->media,'900x900')){
+						$newProductData .= "<images>";
 						foreach ($product->media->{'900x900'} as $image){
 							// + show picture, - dont show picture
 							// 							$newProductData['image']='+'.(string)$image->file_path;
 							$newProductData.="<image>".$image->file_path."</image>";  //test
-								
+							//get image from relative path https://media.medipim.be/
+							//copy($this->mediaUrl.$image->file_path,BP."/var/medipimsync/".$image->file_path);
+							//pub/media/
+							copy($this->mediaUrl.$image->file_path,BP."/pub/".$image->file_path);
 						}
+						$newProductData .= "</images>";
 					}
 					if(property_exists($product->media,'450x450')){
+						$newProductData .= "<small_images>";
 						foreach ($product->media->{'450x450'} as $image){
 							// + show picture, - dont show picture
 							// 							$newProductData['small_image']='+'.(string)$image->file_path;
 							$newProductData.="<small_image>".$image->file_path."</small_image>"; //test
-								
+							copy($this->mediaUrl.$image->file_path , BP."/pub/".$image->file_path);
+							
 						}
+						$newProductData .= "</small_images>";
 					}
 				}
 	
@@ -457,11 +515,14 @@ class Save extends \Magento\Backend\App\Action
 				unset($newProductData); //clear memory
 	
 			}
-			fwrite($prodfile, "</products>");
+			fwrite($prodfile, "</products></prod_doc>");
 			
-			return $prodfile;
+			fclose($prodfile);
+			
+			return $prodfilename;
 	
 		}catch(Exception $e){
+			$this->_logger->error($e);
 			$this->messageManager->addError(
 					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($e->getMessage ())
 			);
@@ -535,10 +596,10 @@ class Save extends \Magento\Backend\App\Action
 	
 				}
 				$parent += 1;
-			}
-			$syncmodel->setQtyUpdt($updated);
-			$syncmodel->setQtyInsrt($inserted);
-			$syncmodel->setQtyTot($total);
+			}		
+			$syncmodel->setQtyUpdt($updated+$syncmodel->getQtyUpdt());
+			$syncmodel->setQtyInsrt($inserted+$syncmodel->getQtyInsrt());
+			$syncmodel->setQtyTot($total+$syncmodel->getQtyTot());
 		} else {
 			$this->messageManager->addError(
 					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml('Failed to open configuration for product insert.')
@@ -546,6 +607,12 @@ class Save extends \Magento\Backend\App\Action
 			$this->_redirect ( '*/*/' );
 		}
 	}
+	/**
+	 * insert or updates the product 
+	 * reads images from the folder: /var/medipimsync/media/
+	 * @param unknown $inprod
+	 * @return string
+	 */
 	function insertProduct($inprod){
 		//insert products in magento
 		try{
@@ -553,9 +620,10 @@ class Save extends \Magento\Backend\App\Action
 			$insert = false;
 						
 			//check existing product
-			$id = self::loadProductIDBySKU($inprod->sku);
+			$id = self::loadProductIDBySKU((string)$inprod->sku);
 			if($id!=false){
 				$product = $this->_objectManager->get('Magento\Catalog\Model\Product')->load($id);
+				//$product = $repo->getById($id);
 				$lastupdated = strtotime($product->getLastUpdatedAt());
 				$inputlastupdated = strtotime($inprod->last_updated_at);
 				if($lastupdated != $inputlastupdated){
@@ -565,39 +633,111 @@ class Save extends \Magento\Backend\App\Action
 					return "NOACTION";
 				}
 				//set the language to update
-				$product->setStoreId($this->_storemanager->getStore($inprod->language)->getId());
+				$storeid = $this->_storemanager->getStore((string)$inprod->language)->getId();
+				$product->setStoreId($storeid);	
 				$product->setName((string)$inprod->name);
 				$product->setDescription((string)$inprod->description);
-				$product->setPrice($inprod->price);
-				//todo taxclass, img
+				$product->setPrice((float)$inprod->price);
+				if($product->getPrice()==0){
+					$product->setStatus(0);
+					$this->_logger->info("Disabled product as price is 0 for sku ".$product->getSku());
+				}else{
+					$product->setStatus(1); // Status on product enabled/ disabled 1/0
+				}
+				$product->setTaxClassId(self::loadTaxClassId((integer)$inprod->tax)); // Tax class id
+				$product->setWeight((integer)$inprod->weight); // weight of product
+				$product->setVisibility(Visibility::VISIBILITY_BOTH); // visibilty of product (catalog / search / catalog, search / Not visible individually)
+				$product->setTypeId(Type::TYPE_SIMPLE); // type of product (simple/virtual/downloadable/configurable)
+				$product->setAttributeSetId($this->_objectManager->get('Magento\Catalog\Model\Product')->getDefaultAttributeSetId()); // Attribute set id 4
+// 				$product->setStockData(
+// 						array(
+// 								'use_config_manage_stock' => 0,
+// 								'manage_stock' => 0,
+// 								'is_in_stock' => 1,
+// 								'qty' => 999999999
+// 						)
+// 				);	
+				//todo check image require update or are image equal for all store id's
 				
-				$this->_logger->info("Product updated ".$category->getName());
-			}else{
-				$insert = true;
-				$product = $this->_objectManager->create('Magento\Catalog\Model\Product');
-				$product->setAttributeSetId($this->_objectManager->get('Magento\Catalog\Model\Product')->getResource()->getEntityType()->getDefaultAttributeSetId());
-				$product->setStoreId($this->_storemanager->getStore($inprod->language)->getId());
-				$product->setName((string)$inprod->name);
-				$product->setDescription((string)$inprod->full_description);
-				$product->setPrice($inprod->price);
 				
 				//add categories and activate them if required
 				$mpcats = explode(";",$inprod->mp_categories);
+				$cats = array();
 				foreach($mpcats as $mpcat){
 					$cat = self::loadCategoryIDByMedipimId((integer)$mpcat);
 					if(!empty($cat)){
 						$categorie = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($cat);
-						$category->setIsActive(1);
-						//TODO add product to cat
+						$categorie->setIsActive(1);
+						$cats[]=$cat;
 					}
 				}
+				$product->setCategoryIds($cats);
+				
+			}else{
+				$insert = true;
+				$product = $this->_objectManager->create('Magento\Catalog\Model\Product');
+				//TODO check set website
+				$storeid = $this->_storemanager->getStore((string)$inprod->language)->getId();
+				$product->setStoreId($storeid);
+				$product->setSku((string)$inprod->sku);
+				$product->setName((string)$inprod->name);
+				$product->setDescription((string)$inprod->description);
+				$product->setPrice((float)$inprod->price);
+				if($product->getPrice()==0){
+					$product->setStatus(0);
+					$this->_logger->info("Disabled product as price is 0 for sku ".$product->getSku());
+				}else{
+					$product->setStatus(1); // Status on product enabled/ disabled 1/0
+				}				
+				$product->setTaxClassId(self::loadTaxClassId((integer)$inprod->tax)); // Tax class id
+				$product->setWeight((integer)$inprod->weight); // weight of product
+				$product->setVisibility(Visibility::VISIBILITY_BOTH); // visibilty of product (catalog / search / catalog, search / Not visible individually)
+				$product->setTypeId(Type::TYPE_SIMPLE); // type of product (simple/virtual/downloadable/configurable)
+				$product->setAttributeSetId($this->_objectManager->get('Magento\Catalog\Model\Product')->getDefaultAttributeSetId()); // Attribute set id 4
+				$product->setStockData(
+						array(
+								'use_config_manage_stock' => 0,
+								'manage_stock' => 0,
+								'is_in_stock' => 1,
+								'qty' => 999999999
+						)
+				);
+				/*
+				 * addImageToMediaGallery($file, $mediaAttribute=null, $move=false, $exclude=true)
+				 * @param string $file  file path of image in file system
+ 				 * @param string|array  $mediaAttribute    code of attribute with type 'media_image',
+ 				 *                  leave blank if image should be only in gallery
+ 				 * @param boolean $move  if true, it will move source file
+ 				 * @param boolean $exclude  mark image as disabled in product page view
+				 */ 
+				foreach($inprod->images as $image){			
+					$imagePath = BP.'/pub/'.$image->image; // path of the image
+					$product->addImageToMediaGallery($imagePath, array('image'), false, false);
+				}
+				foreach($inprod->small_images as $image){
+					$imagePath = BP.'/pub/'.$image->small_image; // path of the image
+					$product->addImageToMediaGallery($imagePath, array('small_image', 'thumbnail'), false, false);
+				}
+				
+				//add categories and activate them if required
+				$mpcats = explode(";",$inprod->mp_categories);
+				$cats = array();
+				foreach($mpcats as $mpcat){
+					$cat = self::loadCategoryIDByMedipimId((integer)$mpcat);
+					if(!empty($cat)){
+						$categorie = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($cat);
+						$categorie->setIsActive(1);
+						//TODO add product to cat
+						$cats[]=$cat;
+					}					
+				}
+				$product->setCategoryIds($cats);
 	
-				$product->save();
 			}
 				
 			if($update || $insert){
-	
-				
+				//$this->_productRepo->save($product);
+				$product->save();
 				if($insert){
 					$this->_logger->info("Product created".$product->getSku());
 					return "INSERTED";
@@ -619,10 +759,33 @@ class Save extends \Magento\Backend\App\Action
 			$this->_redirect ( '*/*/' );
 		}
 	}
-	function loadProductIDBySKU($sku) {
+	private function loadProductIDBySKU($sku) {
 		$connection = $this->_resource->getConnection(\Magento\Framework\App\ResourceConnection::DEFAULT_CONNECTION);
-		$sql = "Select entity_id from catalog_product_entity where sku = " . $sku . ' ORDER BY `entity_id` DESC';
+		$sql = "Select entity_id from catalog_product_entity where sku like " . $sku . ' ORDER BY `entity_id` DESC';
 		$row = $connection->fetchOne ( $sql ); // fetchAll , fetchRow($sql), fetchOne($sql),.
 		return $row;
+	}
+	/**
+	 * Load tax class id based on tax %
+	 * reading tax_class table -- all tax classes have % in name
+	 * default value is tax class for 21%
+	 * @param int $tax
+	 * @return int
+	 */
+	private function loadTaxClassId($tax){
+		$filter = $this->_filterBuilder
+		->setField(ClassModel::KEY_TYPE)
+		->setValue(TaxClassManagementInterface::TYPE_PRODUCT)
+		->create();
+		$searchCriteria = $this->_searchCriteriaBuilder->addFilters([$filter])->create();
+		$searchResults = $this->_taxClassRepository->getList($searchCriteria);
+		foreach ($searchResults->getItems() as $taxClass) {
+			if (strpos($taxClass->getClassName(), $tax) !== false){//werkt niet
+				return $taxClass->getClassId();
+			}
+		}
+		$this->_logger->debug("Tax class id couldn't be found for tax ".$tax." Returned default 21%");
+		return 2;
+		
 	}
 }
