@@ -46,8 +46,8 @@ class UpgradeData implements UpgradeDataInterface
 				$setup->getConnection()
 				->addColumn($tableName, 'last_updated_at',[
 						'type' => Table::TYPE_TIMESTAMP,
-						'nullable' => false,
-						'default' => Table::TIMESTAMP_INIT,
+						'nullable' => true,
+						'default' => null,
 						'comment' => 'Last update from Medipim',
 				]
 				);
@@ -69,12 +69,12 @@ class UpgradeData implements UpgradeDataInterface
 			if (version_compare($context->getVersion(), '1.0.3') < 0) {
 				//code to upgrade to 1.0.3
 					
-				$tableName = $setup->getTable('brainworx_medipimsync_sync');
+				$tableName = $setup->getTable('catalog_product_entity');
 				$setup->getConnection()
 				->addColumn($tableName, 'last_updated_at',[
 						'type' => Table::TYPE_TIMESTAMP,
-						'nullable' => false,
-						'default' => Table::TIMESTAMP_INIT,
+						'nullable' => trie,
+						'default' => null,
 						'comment' => 'Last update from Medipim',
 				]
 				);

@@ -126,9 +126,6 @@ class Save extends \Magento\Backend\App\Action
 				if($data['entity']=="CAT"){
 					$file = self::getCategoriesMedipim($lastsync);
 					self::loadCategories(BP . $file,$model);
-					$model->setIsEnded(true);
-					$model->setUpdateDttm(time());
-					$model->save();
 					$this->_logger->debug("Sync of categories completed");
 				}elseif ($data['entity']=="PROD"){
 					$model->setQtyUpdt(0);
@@ -145,8 +142,10 @@ class Save extends \Magento\Backend\App\Action
 						self::loadProducts($file, $model);
 						$this->_logger->info("CNKS synced with Medipim for: ".$file);
 					}
-				}//TODO set is ended for prod
-				
+				}
+				$model->setIsEnded(true);
+				$model->setUpdateDttm(time());
+				$model->save();
 				$this->messageManager->addSuccess(__('You performed this sync.'));
 				$this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
 				if ($this->getRequest()->getParam('back')) {
@@ -234,6 +233,7 @@ class Save extends \Magento\Backend\App\Action
 					return "NOACTION";
 				}
 				$category->setName((string)$incat->name);
+				$category->setLastUpdatedAt(date("Y-m-d H:i:s", strtotime((string)$incat->last_updated_at)));
 				if($category->getConsumerCatParentId() != $incat->parent_id
 						|| ($category->getConsumerCatParentId()>0 && $category->getParentId() == 0) ){
 					if((integer)$incat->parent_id > 0){
@@ -260,6 +260,7 @@ class Save extends \Magento\Backend\App\Action
 				$insert = true;
 				$category = $this->_objectManager->create('Magento\Catalog\Model\Category');
 				$category->setName((string)$incat->name);
+				$category->setLastUpdatedAt(date("Y-m-d H:i:s", strtotime((string)$incat->last_updated_at)));
 				
 				$category->setIsActive(0);
 				$category->setDisplayMode('PRODUCTS');
@@ -655,9 +656,9 @@ class Save extends \Magento\Backend\App\Action
 			if($id!=false){
 				$product = $this->_objectManager->get('Magento\Catalog\Model\Product')->load($id);
 				//$product = $repo->getById($id);
-				$lastupdated = strtotime($product->getLastUpdatedAt());//returns false
+				$lastupdated = strtotime($product->getLastUpdatedAt());//returns false if null
 				$inputlastupdated = strtotime($inprod->last_updated_at);
-				if($lastupdated != $inputlastupdated){
+				if($lastupdated < $inputlastupdated){
 					$update = true;
 				}else{
 					$this->_logger->info("Product found but no update required ".$product->getSku());
@@ -669,7 +670,7 @@ class Save extends \Magento\Backend\App\Action
 				$product->setStoreId($storeid);	
 				$product->setWebsiteIds(array($store->getWebsiteId()));				
 
-				$product->setLastUpdatedAt($inprod->last_updated_at);
+				$product->setLastUpdatedAt(date("Y-m-d H:i:s", strtotime((string)$inprod->last_updated_at)));
 				
 				$product->setName((string)$inprod->name);
 				$product->setDescription((string)$inprod->description);
@@ -719,7 +720,7 @@ class Save extends \Magento\Backend\App\Action
 				$product->setStoreId($storeid);	
 				$product->setWebsiteIds(array($store->getWebsiteId()));				
 
-				$product->setLastUpdatedAt($inprod->last_updated_at);
+				$product->setLastUpdatedAt(date("Y-m-d H:i:s", strtotime((string)$inprod->last_updated_at)));
 				
 				$product->setSku((string)$inprod->sku);
 				$product->setName((string)$inprod->name);
