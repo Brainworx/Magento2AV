@@ -93,7 +93,7 @@ class Sync extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
     	->from(
     			['ms' => $this->getMainTable()])
     	->where(
-    			'ms.entity = ?',
+    			'ms.entity like ?',
     			$entity
     	);
     

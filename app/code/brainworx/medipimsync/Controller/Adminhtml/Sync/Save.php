@@ -15,6 +15,7 @@ use Magento\Tax\Api\TaxClassRepositoryInterface;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Tax\Api\TaxClassManagementInterface;
+use Magento\Variable\Model\Variable;
 
 //TODO add rest api to execute this sync
 class Save extends \Magento\Backend\App\Action
@@ -30,9 +31,17 @@ class Save extends \Magento\Backend\App\Action
 	protected $_productRepo;
 	protected $_catsRepo;
 	
-	var $id = 123; // your api user id
-	var $key = "IGuh829DevvUZYVwNnTDTvFPkLdm08EhGcUG72Y20peYhStZ2Ugj7AnsRTXZgf8g"; // your secret api key
-	var $mediaUrl = "https://media.medipim.be/";
+// 	var $id = 123; // your api user id
+// 	var $key = "IGuh829DevvUZYVwNnTDTvFPkLdm08EhGcUG72Y20peYhStZ2Ugj7AnsRTXZgf8g"; // your secret api key
+// 	var $mediaUrl = "https://media.medipim.be/";
+	
+	private $_variableMdl;
+	private $_id; // your api user id
+	private $_key; // your secret api key
+	private $_mediaUrl;
+	private $_catUrl;
+	private $_prodUrl;
+	//TODO CAT en PROD url
 	/**
 	 * @param Action\Context $context
 	 */
@@ -43,7 +52,8 @@ class Save extends \Magento\Backend\App\Action
 			TaxClassRepositoryInterface $taxClassRepository,
 			SearchCriteriaBuilder $searchCriteriaBuilder,
 			ProductRepositoryInterface $productrepo,
-			CategoryRepositoryInterface $catsrepo)
+			CategoryRepositoryInterface $catsrepo,
+			Variable $variableMdl)
 	{
 		$this->_resource = $resource;
 		$this->_storemanager = $storemanager;
@@ -53,6 +63,14 @@ class Save extends \Magento\Backend\App\Action
 		$this->_taxClassRepository = $taxClassRepository;
 		$this->_productRepo = $productrepo;
 		$this->_catsRepo = $catsrepo;
+		$this->_variableMdl = $variableMdl;
+		
+		$this->_id = $this->_variableMdl->loadByCode('medipim_api_userid')->getPlainValue();
+		$this->_key = $this->_variableMdl->loadByCode('medipim_api_key')->getPlainValue();
+		$this->_mediaUrl = $this->_variableMdl->loadByCode('medipim_api_mediaurl')->getPlainValue();
+		$this->_catUrl = $this->_variableMdl->loadByCode('medipim_url_cat')->getPlainValue();
+		$this->_prodUrl = $this->_variableMdl->loadByCode('medipim_url_prod')->getPlainValue();
+		
 		
 		parent::__construct($context);
 	}
@@ -97,10 +115,11 @@ class Save extends \Magento\Backend\App\Action
 
 			try {
 				$latestsync = $this->_objectManager->create('brainworx\medipimsync\Model\Sync');
-				$latestsync->loadLastSyncByEntity($data['entity']);
+				$syncquery = $latestsync->loadLastSyncByEntity($data['entity']);
 				$lastsync = '200100101000000';
-				if($latestsync['sync_dttm'] != null){
-					$lastsync = $latestsync['sync_dttm'];
+				if($syncquery['sync_dttm'] != null){
+					$dt = $syncquery['sync_dttm'];
+					$lastsync = date("YmdHis", strtotime($dt)) ;
 				}
 				$model->save();
 				
@@ -126,7 +145,7 @@ class Save extends \Magento\Backend\App\Action
 						self::loadProducts($file, $model);
 						$this->_logger->info("CNKS synced with Medipim for: ".$file);
 					}
-				}
+				}//TODO set is ended for prod
 				
 				$this->messageManager->addSuccess(__('You performed this sync.'));
 				$this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
@@ -308,7 +327,7 @@ class Save extends \Magento\Backend\App\Action
 	}
 	function getCategoriesMedipim($lastmodified,$cat_id=null){
 		try {
-			$purl = "https://api.medipim.be/v2/rest/categories";
+			//$purl = "https://api.medipim.be/v2/rest/categories";
 	
 			//brands, consumer_categories, appstores, leaflets,videos,websites, media<450x450,900x900>
 			if(!empty($cat_ids)){
@@ -322,11 +341,11 @@ class Save extends \Magento\Backend\App\Action
 			$catfile = fopen(BP . $filename,"w");
 	
 			//returns unique cnks numbers
-			$response = file_get_contents($purl, false, stream_context_create(array(
+			$response = file_get_contents($this->_catUrl, false, stream_context_create(array(
 					'http' => array(
 							'method' => 'GET',
 							'header' => array('Content-Type: application/json'."\r\n"
-									. "Authorization: Basic " . base64_encode("$this->id:$this->key")."\r\n"
+									. "Authorization: Basic " . base64_encode("$this->_id:$this->_key")."\r\n"
 									. 'Content-Length: ' . strlen($data_string) . "\r\n"),
 							'content' => $data_string)
 			)
@@ -396,22 +415,22 @@ class Save extends \Magento\Backend\App\Action
 	function getProductDataMedipim($cnks,$lastmodified) {
 		try{
 			//setup sync with Medipim
-			$purl = "https://api.medipim.be/v2/rest/products";
+			//$purl = "https://api.medipim.be/v2/rest/products";
 			$datalabel=explode(",","id,cnk,language,last_updated_at,status,name,febelco_name,ean,atc,apb_category,weight,prescription,tax,public_price_apb,public_price_febelco,public_price_manufacturer,fagg_publ_notice,fagg_spc_notice,pharma_publ_notice,pharma_spc_notice,indication,contra_indication,usage,public_name,description,full_description,composition,properties,width,height,depth,diameter,udi,nut,supplier_reference,labo_publ_notice,labo_spc_notice");
 			//brands, consumer_categories, appstores, leaflets,videos,websites, media<450x450,900x900>
 			
-			$data=array("cnks"=>$cnks,"modified_since"=>$lastmodified);
+			$data=array("cnks"=>$cnks['cnks'],"modified_since"=>$lastmodified);
 			$data_string = json_encode($data);
 			$prodfilename = BP."/var/medipimsync/products".time().".xml";
 			
 			$prodfile = fopen($prodfilename,"w");
 				
 			//returns unique cnks numbers
-			$response = file_get_contents($purl, false, stream_context_create(array(
+			$response = file_get_contents($this->_prodUrl, false, stream_context_create(array(
 					'http' => array(
 							'method' => 'POST',
 							'header' => array('Content-Type: application/json'."\r\n"
-									. "Authorization: Basic " . base64_encode("$this->id:$this->key")."\r\n"
+									. "Authorization: Basic " . base64_encode("$this->_id:$this->_key")."\r\n"
 									. 'Content-Length: ' . strlen($data_string) . "\r\n"),
 							'content' => $data_string)
 			)
@@ -432,6 +451,7 @@ class Save extends \Magento\Backend\App\Action
 						
 						if($label == "cnk"){
 							$mgt_label = "sku";
+							$newProductData .="<discount>".$cnks['discounts'][$product->$label]."</discount>";							
 						}elseif ($label =="status"){
 							$mgt_label = "medipim_status";
 							if($product->$label == "active"){
@@ -481,7 +501,6 @@ class Save extends \Magento\Backend\App\Action
 				
 				$newProductData.="<mp_categories>".implode(",", $categories)."</mp_categories>"; //test
 				
-				//TODO add image lib path
 				if(property_exists($product,'media')){
 					if(property_exists($product->media,'900x900')){
 						$newProductData .= "<images>";
@@ -492,7 +511,7 @@ class Save extends \Magento\Backend\App\Action
 							//get image from relative path https://media.medipim.be/
 							//copy($this->mediaUrl.$image->file_path,BP."/var/medipimsync/".$image->file_path);
 							//pub/media/
-							copy($this->mediaUrl.$image->file_path,BP."/pub/".$image->file_path);
+							copy($this->_mediaUrl.$image->file_path,BP."/pub/".$image->file_path);
 						}
 						$newProductData .= "</images>";
 					}
@@ -502,7 +521,7 @@ class Save extends \Magento\Backend\App\Action
 							// + show picture, - dont show picture
 							// 							$newProductData['small_image']='+'.(string)$image->file_path;
 							$newProductData.="<small_image>".$image->file_path."</small_image>"; //test
-							copy($this->mediaUrl.$image->file_path , BP."/pub/".$image->file_path);
+							copy($this->_mediaUrl.$image->file_path , BP."/pub/".$image->file_path);
 							
 						}
 						$newProductData .= "</small_images>";
@@ -537,29 +556,41 @@ class Save extends \Magento\Backend\App\Action
 	function loadProductsToSync(){
 		try{
 			$cnks = array();
-			$all_cnks = array();
+			$cnks_discounts = array();
+			$result = array();
 			$row = 1;
 			$counter = 0;
 			if (($handle = fopen(BP."/var/medipimsync/config/productcnks.csv", "r")) !== FALSE) {
-				while (($idata = fgetcsv($handle, 1000, ",")) !== FALSE ) {
+				while (($idata = fgetcsv($handle, 1000, ";")) !== FALSE ) {
 					$counter +=1;
-					$num = count($idata);
+					//$num = count($idata);
 					$row++;
-					for ($c=0; $c < $num; $c++) {
-						$cnks[] = $idata[$c];
-					}
+					//for ($c=0; $c < $num; $c++) {
+						$cnks[] = $idata[0];
+						$cnks_discounts[$idata[0]] = $idata[3];
+					//}
 					if($counter == 1000){
-						$all_cnks[]=$cnks;
+						$subresult = array();
+						$subresult['cnks']=$cnks;
 						$cnks = array();
+						$subresult['discounts']=$cnks_discounts;
+						$cnks_discounts = array();
+						$result[]=$subresult;
 						$counter=0;
 					}
 				}
 				if($counter>0){
-					$all_cnks[]=$cnks;
+					$subresult = array();
+					$subresult['cnks']=$cnks;
+					$cnks = array();
+					$subresult['discounts']=$cnks_discounts;
+					$cnks_discounts = array();
+					$result[]=$subresult;
 				}
 				fclose($handle);
 			}
-			return $all_cnks;
+			
+			return $result;
 			
 		}catch(Exception $e){
 			$this->messageManager->addError(
@@ -624,7 +655,7 @@ class Save extends \Magento\Backend\App\Action
 			if($id!=false){
 				$product = $this->_objectManager->get('Magento\Catalog\Model\Product')->load($id);
 				//$product = $repo->getById($id);
-				$lastupdated = strtotime($product->getLastUpdatedAt());
+				$lastupdated = strtotime($product->getLastUpdatedAt());//returns false
 				$inputlastupdated = strtotime($inprod->last_updated_at);
 				if($lastupdated != $inputlastupdated){
 					$update = true;
@@ -633,11 +664,17 @@ class Save extends \Magento\Backend\App\Action
 					return "NOACTION";
 				}
 				//set the language to update
-				$storeid = $this->_storemanager->getStore((string)$inprod->language)->getId();
+				$store = $this->_storemanager->getStore((string)$inprod->language);
+				$storeid = $store->getId();
 				$product->setStoreId($storeid);	
+				$product->setWebsiteIds(array($store->getWebsiteId()));				
+
+				$product->setLastUpdatedAt($inprod->last_updated_at);
+				
 				$product->setName((string)$inprod->name);
 				$product->setDescription((string)$inprod->description);
 				$product->setPrice((float)$inprod->price);
+				$product->setSpecialPrice($product->getPrice()-($product->getPrice()*(float)$inprod->discount));
 				if($product->getPrice()==0){
 					$product->setStatus(0);
 					$this->_logger->info("Disabled product as price is 0 for sku ".$product->getSku());
@@ -677,12 +714,18 @@ class Save extends \Magento\Backend\App\Action
 				$insert = true;
 				$product = $this->_objectManager->create('Magento\Catalog\Model\Product');
 				//TODO check set website
-				$storeid = $this->_storemanager->getStore((string)$inprod->language)->getId();
-				$product->setStoreId($storeid);
+				$store = $this->_storemanager->getStore((string)$inprod->language);
+				$storeid = $store->getId();
+				$product->setStoreId($storeid);	
+				$product->setWebsiteIds(array($store->getWebsiteId()));				
+
+				$product->setLastUpdatedAt($inprod->last_updated_at);
+				
 				$product->setSku((string)$inprod->sku);
 				$product->setName((string)$inprod->name);
 				$product->setDescription((string)$inprod->description);
 				$product->setPrice((float)$inprod->price);
+				$product->setSpecialPrice($product->getPrice()-($product->getPrice()*(float)$inprod->discount));
 				if($product->getPrice()==0){
 					$product->setStatus(0);
 					$this->_logger->info("Disabled product as price is 0 for sku ".$product->getSku());
@@ -765,6 +808,7 @@ class Save extends \Magento\Backend\App\Action
 		$row = $connection->fetchOne ( $sql ); // fetchAll , fetchRow($sql), fetchOne($sql),.
 		return $row;
 	}
+	
 	/**
 	 * Load tax class id based on tax %
 	 * reading tax_class table -- all tax classes have % in name
@@ -780,7 +824,8 @@ class Save extends \Magento\Backend\App\Action
 		$searchCriteria = $this->_searchCriteriaBuilder->addFilters([$filter])->create();
 		$searchResults = $this->_taxClassRepository->getList($searchCriteria);
 		foreach ($searchResults->getItems() as $taxClass) {
-			if (strpos($taxClass->getClassName(), $tax) !== false){//werkt niet
+			$test = strpos($taxClass->getClassName(), (string)$tax);
+			if ($test !== false){
 				return $taxClass->getClassId();
 			}
 		}
