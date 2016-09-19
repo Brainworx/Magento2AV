@@ -9,13 +9,15 @@ use Zend\Validator\Explode;
 use Magento\Tax\Model\ClassModel;
 use Magento\Catalog\Model\Product\Visibility;
 use Magento\Catalog\Model\Product\Type;
-use Magento\Catalog\Api\ProductRepositoryInterface;
-use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Tax\Api\TaxClassRepositoryInterface;
 use Magento\Framework\Api\FilterBuilder;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Tax\Api\TaxClassManagementInterface;
 use Magento\Variable\Model\Variable;
+
+
+// use Magento\Catalog\Api\ProductRepositoryInterface;
+// use Magento\Catalog\Api\CategoryRepositoryInterface;
 
 //TODO add rest api to execute this sync
 class Save extends \Magento\Backend\App\Action
@@ -28,12 +30,8 @@ class Save extends \Magento\Backend\App\Action
 	protected $_taxClassRepository;
 	protected $_searchCriteriaBuilder;
 	
-	protected $_productRepo;
-	protected $_catsRepo;
-	
-// 	var $id = 123; // your api user id
-// 	var $key = "IGuh829DevvUZYVwNnTDTvFPkLdm08EhGcUG72Y20peYhStZ2Ugj7AnsRTXZgf8g"; // your secret api key
-// 	var $mediaUrl = "https://media.medipim.be/";
+// 	protected $_productRepo;
+// 	protected $_catsRepo;
 	
 	private $_variableMdl;
 	private $_id; // your api user id
@@ -41,7 +39,7 @@ class Save extends \Magento\Backend\App\Action
 	private $_mediaUrl;
 	private $_catUrl;
 	private $_prodUrl;
-	//TODO CAT en PROD url
+	
 	/**
 	 * @param Action\Context $context
 	 */
@@ -51,8 +49,8 @@ class Save extends \Magento\Backend\App\Action
 			FilterBuilder $filterBuilder,
 			TaxClassRepositoryInterface $taxClassRepository,
 			SearchCriteriaBuilder $searchCriteriaBuilder,
-			ProductRepositoryInterface $productrepo,
-			CategoryRepositoryInterface $catsrepo,
+			//ProductRepositoryInterface $productrepo,
+			//CategoryRepositoryInterface $catsrepo,
 			Variable $variableMdl)
 	{
 		$this->_resource = $resource;
@@ -61,8 +59,8 @@ class Save extends \Magento\Backend\App\Action
 		$this->_filterBuilder = $filterBuilder;
 		$this->_searchCriteriaBuilder = $searchCriteriaBuilder;
 		$this->_taxClassRepository = $taxClassRepository;
-		$this->_productRepo = $productrepo;
-		$this->_catsRepo = $catsrepo;
+		//$this->_productRepo = $productrepo;
+		//$this->_catsRepo = $catsrepo;
 		$this->_variableMdl = $variableMdl;
 		
 		$this->_id = $this->_variableMdl->loadByCode('medipim_api_userid')->getPlainValue();
@@ -223,8 +221,8 @@ class Save extends \Magento\Backend\App\Action
 			$insert = false;
 			$id = self::loadCategoryIDByMedipimId((integer)$incat->consumer_category_id);
 			if($id!=false){
-				//$category = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($id);
-				$category = $this->_catsRepo->get($id);
+				$category = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($id);
+				//$category = $this->_catsRepo->get($id);
 				$lastupdated = strtotime($category->getLastUpdatedAt());
 				$inputlastupdated = strtotime($incat->last_updated_at);
 				if($lastupdated != $inputlastupdated){
@@ -290,7 +288,7 @@ class Save extends \Magento\Backend\App\Action
 			}
 			
 			if($update || $insert){
-				$this->_catsRepo->save($category);
+				$category->save();
 				
 				//insert custom column values
 				$connection = $this->_resource->getConnection(\Magento\Framework\App\ResourceConnection::DEFAULT_CONNECTION);
