@@ -55,15 +55,15 @@ class UpgradeData implements UpgradeDataInterface
 			if (version_compare($context->getVersion(), '1.0.2') < 0) {
 				//code to upgrade to 1.0.2
 			
-				$tableName = $setup->getTable('catalog_product_entity');
-				$setup->getConnection()
-				->addColumn($tableName, 'qty_insrt',[
-						'type' => Table::TYPE_INTEGER,
-						'nullable' => false,
-						'default' => 0,
-						'comment' => 'Inserted quantity',
-				]
-				);
+// 				$tableName = $setup->getTable('brainworx_medipimsync_sync');
+// 				$setup->getConnection()
+// 				->addColumn($tableName, 'qty_insrt',[
+// 						'type' => Table::TYPE_INTEGER,
+// 						'nullable' => false,
+// 						'default' => 0,
+// 						'comment' => 'Inserted quantity',
+// 				]
+// 				);
 				
 			}
 			if (version_compare($context->getVersion(), '1.0.3') < 0) {
@@ -76,6 +76,20 @@ class UpgradeData implements UpgradeDataInterface
 						'nullable' => true,
 						'default' => null,
 						'comment' => 'Last update from Medipim',
+				]
+				);
+			
+			}
+			if (version_compare($context->getVersion(), '1.0.4') < 0) {
+				//code to upgrade to 1.0.2
+					
+				$tableName = $setup->getTable('brainworx_medipimsync_sync');
+				$setup->getConnection()
+				->addColumn($tableName, 'qty_insrt',[
+						'type' => Table::TYPE_INTEGER,
+						'nullable' => false,
+						'default' => 0,
+						'comment' => 'Inserted quantity',
 				]
 				);
 			
