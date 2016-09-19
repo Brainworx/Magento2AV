@@ -264,7 +264,7 @@ class Save extends \Magento\Backend\App\Action
 				$category->setDisplayMode('PRODUCTS');
 				$category->setStoreId($this->_storemanager->getStore('nl')->getId());
 				$category->setAttributeSetId($this->_objectManager->get('Magento\Catalog\Model\Category')->getResource()->getEntityType()->getDefaultAttributeSetId());
-				//$category->setIncludeInMenu(true);
+				$category->setIncludeInMenu(true);
 			
 				$pcategory;
 				$category->setPath('1');
