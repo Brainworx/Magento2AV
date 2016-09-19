@@ -73,7 +73,7 @@ class UpgradeData implements UpgradeDataInterface
 				$setup->getConnection()
 				->addColumn($tableName, 'last_updated_at',[
 						'type' => Table::TYPE_TIMESTAMP,
-						'nullable' => trie,
+						'nullable' => true,
 						'default' => null,
 						'comment' => 'Last update from Medipim',
 				]
