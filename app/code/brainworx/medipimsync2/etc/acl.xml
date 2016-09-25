@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Acl/etc/acl.xsd">
+    <acl>
+        <resources>
+            <resource id="Magento_Backend::admin">
+                <resource id="Magento_Backend::content">
+                    <resource id="Brainworx_Medipimsync2::medipim" title="Medipim Sync" sortOrder="10" >
+                        <resource id="Brainworx_Medipimsync2::sync" title="Synced entities" sortOrder="40">
+                            <resource id="Brainworx_Medipimsync2::save" title="Start sync" sortOrder="10" />
+                        </resource>
+                    </resource>
+                </resource>
+            </resource>
+        </resources>
+    </acl>
+</config>

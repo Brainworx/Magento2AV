@@ -2,10 +2,10 @@
 <listing xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Ui:etc/ui_configuration.xsd">
     <argument name="data" xsi:type="array">
         <item name="js_config" xsi:type="array">
-            <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing_data_source</item>
-            <item name="deps" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing_data_source</item>
+            <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing_data_source</item>
+            <item name="deps" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing_data_source</item>
         </item>
-        <item name="spinner" xsi:type="string">medipimsync_sync_columns</item>
+        <item name="spinner" xsi:type="string">medipimsync2_sync_columns</item>
         <item name="buttons" xsi:type="array">
             <item name="add" xsi:type="array">
                 <item name="name" xsi:type="string">add</item>
@@ -15,10 +15,10 @@
             </item>
         </item>
     </argument>
-    <dataSource name="medipimsync_sync_listing_data_source">
+    <dataSource name="medipimsync2_sync_listing_data_source">
         <argument name="dataProvider" xsi:type="configurableObject">
             <argument name="class" xsi:type="string">SyncGridDataProvider</argument>
-            <argument name="name" xsi:type="string">medipimsync_sync_listing_data_source</argument>
+            <argument name="name" xsi:type="string">medipimsync2_sync_listing_data_source</argument>
             <argument name="primaryFieldName" xsi:type="string">block_id</argument>
             <argument name="requestFieldName" xsi:type="string">id</argument>
             <argument name="data" xsi:type="array">
@@ -47,7 +47,7 @@
                     <item name="storageConfig" xsi:type="array">
                         <item name="saveUrl" xsi:type="url" path="mui/bookmark/save"/>
                         <item name="deleteUrl" xsi:type="url" path="mui/bookmark/delete"/>
-                        <item name="namespace" xsi:type="string">medipimsync_sync_listing</item>
+                        <item name="namespace" xsi:type="string">medipimsync2_sync_listing</item>
                     </item>
                 </item>
             </argument>
@@ -56,7 +56,7 @@
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
                     <item name="columnsData" xsi:type="array">
-                        <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.medipimsync_sync_columns</item>
+                        <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.medipimsync2_sync_columns</item>
                     </item>
                     <item name="component" xsi:type="string">Magento_Ui/js/grid/controls/columns</item>
                     <item name="displayArea" xsi:type="string">dataGridActions</item>
@@ -68,10 +68,10 @@
                 <item name="config" xsi:type="array">
                     <item name="component" xsi:type="string">Magento_Ui/js/grid/search/search</item>
                     <item name="displayArea" xsi:type="string">dataGridFilters</item>
-                    <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing_data_source</item>
-                    <item name="chipsProvider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.listing_filters_chips</item>
+                    <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing_data_source</item>
+                    <item name="chipsProvider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.listing_filters_chips</item>
                     <item name="storageConfig" xsi:type="array">
-                        <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.bookmarks</item>
+                        <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.bookmarks</item>
                         <item name="namespace" xsi:type="string">current.search</item>
                     </item>
                 </item>
@@ -83,13 +83,13 @@
                     <item name="displayArea" xsi:type="string">dataGridFilters</item>
                     <item name="dataScope" xsi:type="string">filters</item>
                     <item name="storageConfig" xsi:type="array">
-                        <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.bookmarks</item>
+                        <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.bookmarks</item>
                         <item name="namespace" xsi:type="string">current.filters</item>
                     </item>
                     <item name="childDefaults" xsi:type="array">
-                        <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.listing_filters</item>
+                        <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.listing_filters</item>
                         <item name="imports" xsi:type="array">
-                            <item name="visible" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.bookmarks:current.columns.${ $.index }.visible</item>
+                            <item name="visible" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.bookmarks:current.columns.${ $.index }.visible</item>
                         </item>
                     </item>
                 </item>
@@ -100,7 +100,7 @@
                         <item name="dataScope" xsi:type="string">sync_id</item>
                         <item name="label" xsi:type="string" translate="true">ID</item>
                         <item name="childDefaults" xsi:type="array">
-                            <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.listing_filters</item>
+                            <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.listing_filters</item>
                         </item>
                     </item>
                 </argument>
@@ -164,7 +164,7 @@
                         <item name="dataScope" xsi:type="string">creation_time</item>
                         <item name="label" xsi:type="string" translate="true">Created</item>
                         <item name="childDefaults" xsi:type="array">
-                            <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.listing_filters</item>
+                            <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.listing_filters</item>
                         </item>
                     </item>
                 </argument>
@@ -195,7 +195,7 @@
                         <item name="dataScope" xsi:type="string">update_time</item>
                         <item name="label" xsi:type="string" translate="true">Modified</item>
                         <item name="childDefaults" xsi:type="array">
-                            <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.listing_filters</item>
+                            <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.listing_filters</item>
                         </item>
                     </item>
                 </argument>
@@ -226,10 +226,10 @@
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
                     <item name="storageConfig" xsi:type="array">
-                        <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.bookmarks</item>
+                        <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.bookmarks</item>
                         <item name="namespace" xsi:type="string">current.paging</item>
                     </item>
-                    <item name="selectProvider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.medipimsync_sync_columns.ids</item>
+                    <item name="selectProvider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.medipimsync2_sync_columns.ids</item>
                     <item name="displayArea" xsi:type="string">bottom</item>
                     <item name="options" xsi:type="array">
                         <item name="20" xsi:type="array">
@@ -253,16 +253,16 @@
             </argument>
         </paging>
     </container>
-    <columns name="medipimsync_sync_columns">
+    <columns name="medipimsync2_sync_columns">
         <argument name="data" xsi:type="array">
             <item name="config" xsi:type="array">
                 <item name="storageConfig" xsi:type="array">
-                    <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.bookmarks</item>
+                    <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.bookmarks</item>
                     <item name="namespace" xsi:type="string">current</item>
                 </item>
                 <item name="childDefaults" xsi:type="array">
                     <item name="fieldAction" xsi:type="array">
-                        <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.medipimsync_sync_columns.actions</item>
+                        <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.medipimsync2_sync_columns.actions</item>
                         <item name="target" xsi:type="string">applyAction</item>
                         <item name="params" xsi:type="array">
                             <item name="0" xsi:type="string">edit</item>
@@ -271,7 +271,7 @@
                     </item>
                     <item name="controlVisibility" xsi:type="boolean">true</item>
                     <item name="storageConfig" xsi:type="array">
-                        <item name="provider" xsi:type="string">medipimsync_sync_listing.medipimsync_sync_listing.listing_top.bookmarks</item>
+                        <item name="provider" xsi:type="string">medipimsync2_sync_listing.medipimsync2_sync_listing.listing_top.bookmarks</item>
                         <item name="root" xsi:type="string">columns.${ $.index }</item>
                         <item name="namespace" xsi:type="string">current.${ $.storageConfig.root}</item>
                     </item>
@@ -345,7 +345,7 @@
          </column>
          <column name="is_ended">
             <argument name="data" xsi:type="array">
-                <item name="options" xsi:type="object">brainworx\medipimsync\Model\Sync\Source\IsEnded</item>
+                <item name="options" xsi:type="object">Brainworx\Medipimsync2\Model\Sync\Source\IsEnded</item>
                 <item name="config" xsi:type="array">
                     <item name="filter" xsi:type="string">select</item>
                     <item name="component" xsi:type="string">Magento_Ui/js/grid/columns/select</item>
