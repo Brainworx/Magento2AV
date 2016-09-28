@@ -26,42 +26,41 @@ class UpgradeData implements UpgradeDataInterface
 			if (version_compare($context->getVersion(), '1.0.1') < 0) {
 				//code to upgrade to 1.0.1
 			
+				$tableName = $setup->getTable('catalog_category_entity');
+				$setup->getConnection()
+				->addColumn($tableName, 'consumer_category_id',[
+						'type' => Table::TYPE_INTEGER,
+						'nullable' => false, 
+						'default' => '0',
+						'comment' => 'Consumer Category id',
+				]
+				);
+				$setup->getConnection()
+				->addColumn($tableName, 'consumer_cat_parent_id',[
+						'type' => Table::TYPE_INTEGER,
+						'nullable' => false,
+						'default' => '0',
+						'comment' => 'Parent Consumer Category id',
+				]
+				);
+				$setup->getConnection()
+				->addColumn($tableName, 'last_updated_at',[
+						'type' => Table::TYPE_TIMESTAMP,
+						'nullable' => true,
+						'default' => null,
+						'comment' => 'Last update from Medipim',
+				]
+				);
 				
-// 				$tableName = $setup->getTable('catalog_category_entity');
-// 				$setup->getConnection()
-// 				->addColumn($tableName, 'consumer_category_id',[
-// 						'type' => Table::TYPE_INTEGER,
-// 						'nullable' => false, 
-// 						'default' => '0',
-// 						'comment' => 'Consumer Category id',
-// 				]
-// 				);
-// 				$setup->getConnection()
-// 				->addColumn($tableName, 'consumer_cat_parent_id',[
-// 						'type' => Table::TYPE_INTEGER,
-// 						'nullable' => false,
-// 						'default' => '0',
-// 						'comment' => 'Parent Consumer Category id',
-// 				]
-// 				);
-// 				$setup->getConnection()
-// 				->addColumn($tableName, 'last_updated_at',[
-// 						'type' => Table::TYPE_TIMESTAMP,
-// 						'nullable' => true,
-// 						'default' => null,
-// 						'comment' => 'Last update from Medipim',
-// 				]
-// 				);
-				
-// 				$tableName2 = $setup->getTable('catalog_product_entity');
-// 				$setup->getConnection()
-// 				->addColumn($tableName2, 'last_updated_at',[
-// 						'type' => Table::TYPE_TIMESTAMP,
-// 						'nullable' => true,
-// 						'default' => null,
-// 						'comment' => 'Last update from Medipim',
-// 				]
-// 				);
+				$tableName2 = $setup->getTable('catalog_product_entity');
+				$setup->getConnection()
+				->addColumn($tableName2, 'last_updated_at',[
+						'type' => Table::TYPE_TIMESTAMP,
+						'nullable' => true,
+						'default' => null,
+						'comment' => 'Last update from Medipim',
+				]
+				);
 			}
 			if (version_compare($context->getVersion(), '1.0.2') < 0) {
 				//code to upgrade to 1.0.2

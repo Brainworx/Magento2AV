@@ -151,11 +151,14 @@ class Save extends \Magento\Backend\App\Action
 				}
 				return $resultRedirect->setPath('*/*/');
 			} catch (\Magento\Framework\Exception\LocalizedException $e) {
+				$this->_logger->error("Error medipimsync save ".$e->getLogMessage());
 				$this->messageManager->addError($e->getMessage());
 			} catch (\RuntimeException $e) {
+				$this->_logger->error("Error medipimsync save ".$e->getMessage());
 				$this->messageManager->addError($e->getMessage());
 			} catch (\Exception $e) {
-				$this->messageManager->addException($e, __('Something went wrong while executing the sync.'));
+				$this->_logger->error("Error medipimsync save ".$e->getMessage());
+				$this->messageManager->addException($e, __('Something went wrong while executing the sync:'.$e->getMessage()));
 			}
 
 			$this->_getSession()->setFormData($data);
@@ -318,8 +321,9 @@ class Save extends \Magento\Backend\App\Action
 			return "NOACTION";
 			
 		} catch(Exception $e) {
+			$this->_logger->error("Error medipimsync save ".$e->getMessage());
 			$this->messageManager->addError(
-					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($e->getMessage ())
+					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($e->getMessage())
 			);
 			$this->_redirect ( '*/*/' );
 		}
@@ -397,6 +401,7 @@ class Save extends \Magento\Backend\App\Action
 			return $filename;
 	
 		}catch (Exception $e){
+			$this->_logger->error("Error medipimsync save ".$e->getMessage());
 			$this->messageManager->addError(
 					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($e->getMessage ())
 			);
@@ -447,10 +452,13 @@ class Save extends \Magento\Backend\App\Action
 				foreach($datalabel as $label){
 					if(property_exists($product,$label)){
 						$mgt_label = $label;
-						
+						//skip indication tags 
+                                                if($label == "indication" || $label == "composition"){
+                                                        continue;
+                                                } 
 						if($label == "cnk"){
 							$mgt_label = "sku";
-							$newProductData .="<discount>".$cnks['discounts'][$product->$label]."</discount>";							
+							$newProductData .="<discount>".$cnks['discounts'][(int)$product->$label]."</discount>";							
 						}elseif ($label =="status"){
 							$mgt_label = "medipim_status";
 							if($product->$label == "active"){
@@ -469,7 +477,7 @@ class Save extends \Magento\Backend\App\Action
 						}elseif ($label == "full_description"){
 							$mgt_label = "description";
 						}
-						$newProductData .="<".$mgt_label.">".$product->$label."</".$mgt_label.">";
+						$newProductData .="<".$mgt_label.">".htmlspecialchars($product->$label)."</".$mgt_label.">";
 					}
 				}
 				//set price
@@ -540,7 +548,7 @@ class Save extends \Magento\Backend\App\Action
 			return $prodfilename;
 	
 		}catch(Exception $e){
-			$this->_logger->error($e);
+			$this->_logger->error("Error medipimsync save ".$e->getMessage());
 			$this->messageManager->addError(
 					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($e->getMessage ())
 			);
@@ -560,7 +568,7 @@ class Save extends \Magento\Backend\App\Action
 			$row = 1;
 			$counter = 0;
 			if (($handle = fopen(BP."/var/medipimsync/config/productcnks.csv", "r")) !== FALSE) {
-				while (($idata = fgetcsv($handle, 1000, ";")) !== FALSE ) {
+				while (($idata = fgetcsv($handle, 500, ";")) !== FALSE ) {
 					$counter +=1;
 					//$num = count($idata);
 					$row++;
@@ -568,7 +576,7 @@ class Save extends \Magento\Backend\App\Action
 						$cnks[] = $idata[0];
 						$cnks_discounts[$idata[0]] = $idata[3];
 					//}
-					if($counter == 1000){
+					if($counter == 500){
 						$subresult = array();
 						$subresult['cnks']=$cnks;
 						$cnks = array();
@@ -592,6 +600,7 @@ class Save extends \Magento\Backend\App\Action
 			return $result;
 			
 		}catch(Exception $e){
+			$this->_logger->error("Error medipimsync save ".$e->getMessage());
 			$this->messageManager->addError(
 					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($e->getMessage ())
 			);
@@ -652,16 +661,19 @@ class Save extends \Magento\Backend\App\Action
 			//check existing product
 			$id = self::loadProductIDBySKU((string)$inprod->sku);
 			if($id!=false){
+				$this->_logger->info("Product found id ".$id);
+				$update = true;
 				$product = $this->_objectManager->get('Magento\Catalog\Model\Product')->load($id);
 				//$product = $repo->getById($id);
 				$lastupdated = strtotime($product->getLastUpdatedAt());//returns false if null
 				$inputlastupdated = strtotime($inprod->last_updated_at);
-				if($lastupdated < $inputlastupdated){
-					$update = true;
-				}else{
-					$this->_logger->info("Product found but no update required ".$product->getSku());
-					return "NOACTION";
-				}
+				//TODO to be uncommented when check is clear
+// 				if($lastupdated < $inputlastupdated){
+// 					$update = true;
+// 				}else{
+// 					$this->_logger->info("Product found but no update required ".$product->getSku());
+// 					return "NOACTION";
+// 				}
 				//set the language to update
 				$store = $this->_storemanager->getStore((string)$inprod->language);
 				$storeid = $store->getId();
@@ -685,14 +697,14 @@ class Save extends \Magento\Backend\App\Action
 				$product->setVisibility(Visibility::VISIBILITY_BOTH); // visibilty of product (catalog / search / catalog, search / Not visible individually)
 				$product->setTypeId(Type::TYPE_SIMPLE); // type of product (simple/virtual/downloadable/configurable)
 				$product->setAttributeSetId($this->_objectManager->get('Magento\Catalog\Model\Product')->getDefaultAttributeSetId()); // Attribute set id 4
-// 				$product->setStockData(
-// 						array(
-// 								'use_config_manage_stock' => 0,
-// 								'manage_stock' => 0,
-// 								'is_in_stock' => 1,
-// 								'qty' => 999999999
-// 						)
-// 				);	
+ 				$product->setStockData(
+						array(
+								'use_config_manage_stock' => 0,
+								'manage_stock' => 0,
+								'is_in_stock' => 1,
+								'qty' => 999
+						)
+				);
 				//todo check image require update or are image equal for all store id's
 				
 				
@@ -704,6 +716,7 @@ class Save extends \Magento\Backend\App\Action
 					if(!empty($cat)){
 						$categorie = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($cat);
 						$categorie->setIsActive(1);
+						$categorie->save();
 						$cats[]=$cat;
 					}
 				}
@@ -741,7 +754,7 @@ class Save extends \Magento\Backend\App\Action
 								'use_config_manage_stock' => 0,
 								'manage_stock' => 0,
 								'is_in_stock' => 1,
-								'qty' => 999999999
+								'qty' => 999
 						)
 				);
 				/*
@@ -769,7 +782,7 @@ class Save extends \Magento\Backend\App\Action
 					if(!empty($cat)){
 						$categorie = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($cat);
 						$categorie->setIsActive(1);
-						//TODO add product to cat
+						$categorie->save();
 						$cats[]=$cat;
 					}					
 				}
@@ -795,6 +808,7 @@ class Save extends \Magento\Backend\App\Action
 			return "NOACTION";
 				
 		} catch(Exception $e) {
+			$this->_logger->error("Error medipimsync save ".$e->getMessage());
 			$this->messageManager->addError(
 					$this->_objectManager->get('Magento\Framework\Escaper')->escapeHtml($e->getMessage ())
 			);
