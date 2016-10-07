@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Brainworx\Medipimsync2\Api\Data\SyncInterface" type="Brainworx\Medipimsync2\Model\Sync" />
+	<virtualType name="Medipimsync2GridFilterPool" type="Magento\Framework\View\Element\UiComponent\DataProvider\FilterPool">
+        <arguments>
+            <argument name="appliers" xsi:type="array">
+                <item name="regular" xsi:type="object">Magento\Framework\View\Element\UiComponent\DataProvider\RegularFilter</item>
+                <item name="fulltext" xsi:type="object">Magento\Framework\View\Element\UiComponent\DataProvider\FulltextFilter</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="SyncGridDataProvider" type="Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider">
+        <arguments>
+            <argument name="collection" xsi:type="object" shared="false">Brainworx\Medipimsync2\Model\Resource\Sync\Collection</argument>
+            <argument name="filterPool" xsi:type="object" shared="false">Medipimsync2GridFilterPool</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Brainworx\Medipimsync2\Model\ResourceModel\Sync\Grid\Collection" type="Magento\Framework\View\Element\UiComponent\DataProvider\SearchResult">
+        <arguments>
+            <argument name="mainTable" xsi:type="string">brainworx_medipimsync2_sync</argument>
+            <argument name="resourceModel" xsi:type="string">Brainworx\Medipimsync2\Model\ResourceModel\Sync</argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
+        <arguments>
+            <argument name="collections" xsi:type="array">
+                <item name="medipimsync2_sync_listing_data_source" xsi:type="string">Brainworx\Medipimsync2\Model\ResourceModel\Sync\Grid\Collection</item>
+            </argument>
+        </arguments>
+    </type>
+</config>
