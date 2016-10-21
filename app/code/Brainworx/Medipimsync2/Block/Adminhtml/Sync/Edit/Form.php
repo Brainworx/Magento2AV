@@ -18,6 +18,7 @@ class Form extends \Magento\Backend\Block\Widget\Form\Generic
 	 */
 	protected $_systemStore;
 	protected $_loginUser;
+	private $_config;
 
 	/**
 	 * @param \Magento\Backend\Block\Template\Context $context
@@ -34,6 +35,12 @@ class Form extends \Magento\Backend\Block\Widget\Form\Generic
 	) {
 		$this->_systemStore = $systemStore;
 		$this->_loginUser = $authSession->getUser()->getUsername();
+		$dir = $this->_variableMdl->loadByCode('medipim_sync_config_dir')->getPlainValue();
+		$temp = array_diff(scandir(BP."/".$dir), array('.', '..'));
+		$this->_config['CAT']= 'Categories';
+		foreach($temp as $prod){
+			$this->_config[$prod]= $prod;
+		}
 		parent::__construct($context, $registry, $formFactory, $data);
 	}
 
@@ -87,7 +94,7 @@ class Form extends \Magento\Backend\Block\Widget\Form\Generic
 						'title' => __('Entity'),
 						'name' => 'entity',
 						'required' => true,
-						'options' => ['PROD' => __('Products'), 'CAT' => __('Categories')]
+						'options' => $this->_config//['PROD' => __('Products'), 'CAT' => __('Categories')]
 				]
 		);
 

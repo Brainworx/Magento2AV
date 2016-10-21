@@ -39,6 +39,7 @@ class Save extends \Magento\Backend\App\Action
 	private $_mediaUrl;
 	private $_catUrl;
 	private $_prodUrl;
+	private $_configdir;
 	
 	/**
 	 * @param Action\Context $context
@@ -68,6 +69,7 @@ class Save extends \Magento\Backend\App\Action
 		$this->_mediaUrl = $this->_variableMdl->loadByCode('medipim_api_mediaurl')->getPlainValue();
 		$this->_catUrl = $this->_variableMdl->loadByCode('medipim_url_cat')->getPlainValue();
 		$this->_prodUrl = $this->_variableMdl->loadByCode('medipim_url_prod')->getPlainValue();
+		$this->_configdir = $this->_variableMdl->loadByCode('medipim_sync_config_dir')->getPlainValue();
 		
 		
 		parent::__construct($context);
@@ -119,17 +121,19 @@ class Save extends \Magento\Backend\App\Action
 					$dt = $syncquery['sync_dttm'];
 					$lastsync = date("YmdHis", strtotime($dt)) ;
 				}
+				$this->_logger->debug($data['entity']." - Last sync ".$lastsync);
+				
 				$model->save();
 				
 				if($data['entity']=="CAT"){
 					$file = self::getCategoriesMedipim($lastsync);
 					self::loadCategories(BP . $file,$model);
 					$this->_logger->debug("Sync of categories completed");
-				}elseif ($data['entity']=="PROD"){
+				}else{//if ($data['entity']=="PROD")
 					$model->setQtyUpdt(0);
 					$model->setQtyInsrt(0);
 					$model->setQtyTot(0);
-					$all_cnks = self::loadProductsToSync();
+					$all_cnks = self::loadProductsToSync($data['entity']);
 					$files = array();
 					foreach($all_cnks as $cnks_group){
 						$file = self::getProductDataMedipim($cnks_group, $lastsync);
@@ -568,15 +572,16 @@ class Save extends \Magento\Backend\App\Action
 	 * Loads the cnks to sync with Medipim from config file
 	 * /var/medipimsync/config/productcnks.csv - csv with 1 cnk per line
 	 * returns array of array with 1000 cnks per entry
+	 * default config= productcnks.csv
 	 */ 
-	function loadProductsToSync(){
+	function loadProductsToSync($configfile='productcnks.csv'){
 		try{
 			$cnks = array();
 			$cnks_discounts = array();
 			$result = array();
 			$row = 1;
 			$counter = 0;
-			if (($handle = fopen(BP."/var/medipimsync/config/productcnks.csv", "r")) !== FALSE) {
+			if (($handle = fopen(BP."/".$this->_configdir."/".$configfile, "r")) !== FALSE) {
 				while (($idata = fgetcsv($handle, 500, ";")) !== FALSE ) {
 					$counter +=1;
 					//$num = count($idata);
