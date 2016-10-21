@@ -6,6 +6,7 @@ use Magento\Framework\Registry;
 use Magento\Framework\Data\FormFactory;
 use Magento\Store\Model\System\Store;
 use Magento\Backend\Model\Auth\Session;
+use Magento\Variable\Model\Variable;
 
 /**
  * Adminhtml sync edit form
@@ -31,11 +32,11 @@ class Form extends \Magento\Backend\Block\Widget\Form\Generic
 	 */
 	public function __construct(
 			Context $context,Registry $registry,FormFactory $formFactory,Store $systemStore,
-			array $data = [],Session $authSession
+			array $data = [],Session $authSession,Variable $variableMdl
 	) {
 		$this->_systemStore = $systemStore;
 		$this->_loginUser = $authSession->getUser()->getUsername();
-		$dir = $this->_variableMdl->loadByCode('medipim_sync_config_dir')->getPlainValue();
+		$dir = $variableMdl->loadByCode('medipim_sync_config_dir')->getPlainValue();
 		$temp = array_diff(scandir(BP."/".$dir), array('.', '..'));
 		$this->_config['CAT']= 'Categories';
 		foreach($temp as $prod){
