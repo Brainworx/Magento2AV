@@ -8,10 +8,12 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
         <tab id="smartwave_porto" translate="label" sortOrder="50">
-            <label>Porto 2.3.4.3</label>
+        	<label>BP Wave 2.3.4.3</label>
+            <!-- <label>Porto 2.3.4.3</label>-->
         </tab>
         <section id="porto_settings" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>Porto - Settings Panel</label>
+            <!-- <label>Porto - Settings Panel</label> -->
+            <label>BP - Settings Panel</label>
             <tab>smartwave_porto</tab>
             <resource>Smartwave_Porto::config</resource>
             <group id="general" translate="label" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -836,7 +838,8 @@
             </group>
         </section>
         <section id="porto_design" translate="label" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>Porto - Design Panel</label>
+            <!-- <label>Porto - Design Panel</label> -->
+            <label>BP - Design Panel</label> 
             <tab>smartwave_porto</tab>
             <resource>Smartwave_Porto::config</resource>
             <group id="general" translate="label" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
