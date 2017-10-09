@@ -1,0 +1,18 @@
+2017-10-09 22:46:27 (1507581987)Starting sync
+will process 3283 records -- /Process 0// / / Total processed = 250 of 1022/ / 
+/Process 250// / / Total processed = 500 of 1022/ / 
+/Process 500// / / Total processed = 750 of 1022/ / 
+/Process 750// / / Total processed = 1000 of 1022/ / 
+/Process 1000// / / Total processed = 1022 of 1022/ / 
+/Process 0// / / Total processed = 250 of 1024/ / 
+/Process 250// / / Total processed = 500 of 1024/ / 
+/Process 500// / / Total processed = 750 of 1024/ / 
+/Process 750// / / Total processed = 1000 of 1024/ / 
+/Process 1000// / / Total processed = 1024 of 1024/ / 
+/Process 0// / / Total processed = 250 of 1023/ / 
+/Process 250// / / Total processed = 500 of 1023/ / 
+/Process 500// / / Total processed = 750 of 1023/ / 
+/Process 750// / / Total processed = 1000 of 1023/ / 
+/Process 1000// / / Total processed = 1023 of 1023/ / 
+/Process 0// / / Total processed = 211 of 211/ / 
+End processing 3280

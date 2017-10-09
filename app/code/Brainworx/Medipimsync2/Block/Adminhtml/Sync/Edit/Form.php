@@ -38,7 +38,7 @@ class Form extends \Magento\Backend\Block\Widget\Form\Generic
 		$this->_loginUser = $authSession->getUser()->getUsername();
 		$dir = $variableMdl->loadByCode('medipim_sync_config_dir')->getPlainValue();
 		$temp = array_diff(scandir(BP."/".$dir), array('.', '..'));
-		$this->_config['CAT']= 'Categories';
+		$this->_config['CAT']= 'Clean Categories';
 		foreach($temp as $prod){
 			$this->_config[$prod]= $prod;
 		}

@@ -4,7 +4,7 @@ namespace Brainworx\Medipimsync2\Controller\Index;
 use \Magento\Framework\App\Action\Action;
 
 /**
- * This will map to: /medipimsync/ /medipimsync/index and /medipimsync/index/index.
+ * This will map to: /medipimsync/ /medipimsync/index and /medipimsync2/index/index.
  * @author Stijn
  *
  */

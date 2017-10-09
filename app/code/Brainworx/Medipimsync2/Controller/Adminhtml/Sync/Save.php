@@ -93,6 +93,7 @@ class Save extends \Magento\Backend\App\Action
 	 */
 	public function execute()
 	{
+		
 		$this->_logger->debug("Starting sync");
 		$data = $this->getRequest()->getPostValue();
 		/** @var \Magento\Backend\Model\View\Result\Redirect $resultRedirect */
@@ -100,22 +101,32 @@ class Save extends \Magento\Backend\App\Action
 		
 		if ($data) {
 			try {
-				
-				/** @var \brainworx\medipimsync\Model\Sync $model */
-				$model = $this->_objectManager->create('Brainworx\Medipimsync2\Model\Sync');
-				
-				$this->_eventManager->dispatch(
-						'medipimsync2_sync_prepare_save',
-						['sync' => $model, 'request' => $this->getRequest()]
-				);
-				
-				$this->_synchelper->sync($data['entity'],$model);
-				
-				$this->messageManager->addSuccess(__('You performed this sync.'));
-				$this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
-				if ($this->getRequest()->getParam('back')) {
-					return $resultRedirect->setPath('*/*/edit', ['sync_id' => $model->getId(), '_current' => true]);
-				}				
+				if($data['entity']=='CAT'){
+					$this->_logger->debug("Starting cleanup");
+					self::deleteAllCategories();
+					$this->_logger->debug("Cleanup completed");
+					
+					$resultRedirect = $this->resultRedirectFactory->create();
+					
+					return $resultRedirect->setPath('*/*/');
+				}else{
+				//temp disabled
+// 					/** @var \brainworx\medipimsync\Model\Sync $model */
+// 					$model = $this->_objectManager->create('Brainworx\Medipimsync2\Model\Sync');
+					
+// 					$this->_eventManager->dispatch(
+// 							'medipimsync2_sync_prepare_save',
+// 							['sync' => $model, 'request' => $this->getRequest()]
+// 					);
+					
+// 					$this->_synchelper->sync($data['entity'],$model);
+					
+// 					$this->messageManager->addSuccess(__('You performed this sync.'));
+// 					$this->_objectManager->get('Magento\Backend\Model\Session')->setFormData(false);
+// 					if ($this->getRequest()->getParam('back')) {
+// 						return $resultRedirect->setPath('*/*/edit', ['sync_id' => $model->getId(), '_current' => true]);
+// 					}		
+				}
 				
 			} catch (\Magento\Framework\Exception\LocalizedException $e) {
 				$this->_logger->error("Error medipimsync save ".$e->getLogMessage());
@@ -129,5 +140,28 @@ class Save extends \Magento\Backend\App\Action
 			}
 		}
 		return $resultRedirect->setPath('*/*/');
+	}
+	function deleteAllCategories() {
+	
+		$categoryFactory = $this->_objectManager->get('Magento\Catalog\Model\CategoryFactory');
+		$newCategory = $categoryFactory->create();
+		$collection = $newCategory->getCollection();
+		$this->_objectManager->get('Magento\Framework\Registry')->register('isSecureArea', true);
+	
+		foreach($collection as $category) {
+	
+			$category_id = $category->getId();
+	
+			if( $category_id <= 2 ) continue;
+	
+			try {
+				$category->delete();
+	
+			} catch (Exception $e) {
+				echo 'Failed to remove category '.$category_id .PHP_EOL;
+				echo $e->getMessage() . "\n" .PHP_EOL;
+			}
+			echo 'Categories Removed '.PHP_EOL;
+		}
 	}
 }
