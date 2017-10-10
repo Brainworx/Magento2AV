@@ -1,21 +1,24 @@
 <?php
+//setting the current dir to be able to use relative paths
+chdir(__DIR__);
+echo "dir: ".__DIR__.' - ';
 require_once 'MedipimApiV3Client.php';
 
 $client = new MedipimApiV3Client(123,'IGuh829DevvUZYVwNnTDTvFPkLdm08EhGcUG72Y20peYhStZ2Ugj7AnsRTXZgf8g');
 
 
 date_default_timezone_set("Europe/Brussels");
-$logfile_handle = fopen("../import/medipimsync_log.txt","a");
-fwrite($logfile_handle,date('Y-m-d H:i:s')." (".time().")Starting sync".PHP_EOL);
+echo date('Y-m-d H:i:s')." (".time().")Starting sync".PHP_EOL;
 
 /*
  * get input from url - productcats to sync
  */
-$productcatsIDtosync=filter_input(INPUT_GET,"sync",FILTER_SANITIZE_STRING);
-if(empty($productcatsIDtosync)){
-	fwrite($logfile_handle,"Products to sync not set.".PHP_EOL);
+$arg_count = $_SERVER['argc'];
+if($arg_count != 2){
+	echo "No sync argument provided";
 	die;
 }
+$productcatsIDtosync=$_SERVER['argv'][1];//0=php script 1=first param ....
 
 //TOOD update to have a date per type
 $updatedSince_handle = fopen("../config/medipimsync_updatedSince.csv","r");//keep unix timestamp of last sync per type
@@ -79,6 +82,7 @@ $rowcounter=0;
 while (($data = fgetcsv($productcatstosync_handle, 0, ",")) !== FALSE ) {
 	if($rowcounter == $productcatsIDtosync){
 		$allcategories=$data;
+        echo ' '.$productcatsIDtosync.' '.$data.' ';
 		break;
 	}
 	$rowcounter++;
@@ -86,7 +90,7 @@ while (($data = fgetcsv($productcatstosync_handle, 0, ",")) !== FALSE ) {
 fclose($productcatstosync_handle);
 unset($data);
 if(empty($allcategories)){
-	fwrite($logfile_handle,"No Cats found in config file".PHP_EOL); 
+	echo "No Cats found in config file".PHP_EOL; 
 	die;
 }
 /*
@@ -135,7 +139,7 @@ $cnks_details_groups[] = $cnks_details;
 unset($cnks);
 unset($cnks_details);
 
-fwrite($logfile_handle, 'will process '.$teller_cnks.' records -- ');
+echo 'will process '.$teller_cnks.' records -- ';
 
 //cat translations
 $allcategories_nl = array("dieet"=>"Dieet","baby"=>"Baby","haarhuid"=>"Haar en huid","homeo"=>"Homeo","kruiden"=>"Kruiden",
@@ -156,7 +160,7 @@ $newProdData_fr="";
 $newProdData_en="";
 
 $prodfile = fopen("../import/products".$productcatsIDtosync.".csv","w");
-fputs( $catfile, "\xEF\xBB\xBF" );
+fputs( $prodfile, "\xEF\xBB\xBF" );
 $titles = "sku,store_view_code,attribute_set_code,product_type,categories,product_websites,name,description,short_description,weight,product_online,tax_class_name,visibility,price,special_price,special_price_from_date,special_price_to_date,url_key,meta_title,meta_keywords,meta_description,base_image,base_image_label,small_image,small_image_label,thumbnail_image,thumbnail_image_label,created_at,updated_at,new_from_date,new_to_date,display_product_options_in,map_price,msrp_price,map_enabled,gift_message_available,custom_design,custom_design_from,custom_design_to,custom_layout_update,page_layout,product_options_container,msrp_display_actual_price_type,country_of_manufacture,additional_attributes,qty,out_of_stock_qty,use_config_min_qty,is_qty_decimal,allow_backorders,use_config_backorders,min_cart_qty,use_config_min_sale_qty,max_cart_qty,use_config_max_sale_qty,is_in_stock,notify_on_stock_below,use_config_notify_stock_qty,manage_stock,use_config_manage_stock,use_config_qty_increments,qty_increments,use_config_enable_qty_inc,enable_qty_increments,is_decimal_divided,website_id,related_skus,crosssell_skus,upsell_skus,additional_images,additional_image_labels,custom_options,configurable_variations,configurable_variation_prices,configurable_variation_labels,bundle_price_type,bundle_sku_type,bundle_price_view,bundle_weight_type,bundle_values";
 fwrite($prodfile,$titles.PHP_EOL);
 foreach ($cnks_groups as $key => $cnks){
@@ -179,9 +183,7 @@ foreach ($cnks_groups as $key => $cnks){
 		$newProdData_fr="";
 		$newProdData_en="";
 		
-		$offset=$meta['page']['offset'];//no -> offset
-		fwrite($logfile_handle, "/Process ".$offset.'/');
-			
+		$offset=$meta['page']['offset'];//no -> offset			
 		
 		foreach($prodList as $product){
 			$newProdData .= $product['cnk'];//sku;
@@ -266,8 +268,8 @@ foreach ($cnks_groups as $key => $cnks){
 			}
 			//fallback in case medipim has no cat
 			if(empty($categories)){
-				$categories="Default Category/Andere/".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']['cat']]];
-				$category_used[0]="0".";".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']['cat']]].";".$allcategories_fr[$cnks_details_groups[$key][$product['cnk']['cat']]].";".$allcategories_en[$cnks_details_groups[$key][$product['cnk']['cat']]];
+				$categories="Default Category/Andere/".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']]['cat']];
+				$category_used[0]="0".";".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']]['cat']].";".$allcategories_fr[$cnks_details_groups[$key][$product['cnk']]['cat']].";".$allcategories_en[$cnks_details_groups[$key][$product['cnk']]['cat']];
 				
 			}
 			$newProdData .=",".'"Default Category|'.$categories.'"';
@@ -376,7 +378,7 @@ foreach ($cnks_groups as $key => $cnks){
 			}
 			$vat = $product['vat'];
 			if(empty($vat)){
-				fwrite($logfile_handle, '/---Error: VAT empty---/');
+				echo '/---Error: VAT empty---/';
 				$vat=21;
 				$newProdData .=","."tax-21";//tax_class_name; 
 				$newProdData_nl .=","."tax-21";//tax_class_name; 
@@ -465,8 +467,8 @@ foreach ($cnks_groups as $key => $cnks){
 			$newProdData .=",";//.small_image_label;
 			$newProdData .=",".$base_image;//.thumbnail_image;
 			$newProdData .=",";//.thumbnail_image_label;
-			$newProdData .=",".date("d.m.Y H:m",$product['meta'].['createdAt']);
-			$newProdData .=",".date("d.m.Y H:m",$product['meta'].['updatedAt']);
+			$newProdData .=",".date("d.m.Y H:m",$product['meta'].['createdAt']+0);
+			$newProdData .=",".date("d.m.Y H:m",$product['meta'].['updatedAt']+0);
 			$newProdData .=",";//.new_from_date;
 			$newProdData .=",";//.new_to_date;
 			$newProdData .=",";//.display_product_options_in;
@@ -709,21 +711,20 @@ foreach ($cnks_groups as $key => $cnks){
 			unset($newProdData_en);
 		}
 		$pagecounter++;
-		fwrite($logfile_handle, "/ - ".$processed." of ".$quantity_medipim. '- / ');
+		echo "/ done ".$processed." of ".$quantity_medipim. ' / ';
 	}while($processed < $quantity_medipim);
 	$total_products+=$processed;
 }
-$catfile = fopen("../../../medipimimport/categories".$productcatsIDtosync.".csv","w");
+$catfile = fopen("../import/categories".$productcatsIDtosync.".csv","w");
 fputs( $catfile, "\xEF\xBB\xBF" );
 fwrite($catfile,"id;nl;fr;en".PHP_EOL);
 foreach($category_used as $cat){
 	fwrite($catfile,$cat.PHP_EOL);
 }
 
-fwrite($logfile_handle, "End processing ".$total_products.PHP_EOL);
+echo "End processing ".$total_products.PHP_EOL;
 fclose($prodfile);
 fclose($catfile);
-fclose($logfile_handle);
 
 $updatedSince_handle = fopen("../config/medipimsync_updatedSince.csv","w");//keep unix timestamp of last sync per type
 if(empty($productcatsIDStosync) || !array_key_exists($productcatsIDtosync,$productcatsIDStosync)){
