@@ -249,7 +249,7 @@ foreach ($cnks_groups as $key => $cnks){
 					$partcnt = count($parts);
 					while($partcnt>1){
 						if(!empty($categories)){
-							$categories .= "|";
+							$categories .= ";";
 						}
 						$categories.="Default Category/";
 						for($j=0;$j<$partcnt-1;$j++){
@@ -390,7 +390,7 @@ foreach ($cnks_groups as $key => $cnks){
 				$newProdData_fr .=","."tax-".$product['vat'];//."tax-".$product['vat'];
 				$newProdData_en .=","."tax-".$product['vat'];//."tax-".$product['vat'];
 			}
-			$newProdData .=",".'"Catalog, Search"';//visibility;
+			$newProdData .=",".'"Catalogus, Zoeken"';//visibility;
 			$newProdData_nl .=",";
 			$newProdData_fr .=",";//.'"Catalog, Search"';
 			$newProdData_en .=",";//.'"Catalog, Search"';
@@ -421,14 +421,14 @@ foreach ($cnks_groups as $key => $cnks){
 			$newProdData_nl .=",";
 			$newProdData_nl .=",";
 			if(!empty($product['name']['fr'])){
-				$newProdData_fr .=",".strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['fr'])));
+				$newProdData_fr .=",prd-".strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['fr'])));
 				$newProdData_fr .=",".'"'.$product['name']['fr'].'"';//meta_title;
 			}else{
 				$newProdData_fr .=",";//.strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['nl'])));	
 				$newProdData_fr .=",";//.'"'.$product['name']['nl'].'"';//meta_title;
 			}
 			if(!empty($product['name']['en'])){
-				$newProdData_en .=",".strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['en'])));
+				$newProdData_en .=",prd-".strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['en'])));
 				$newProdData_en .=",".'"'.$product['name']['en'].'"';//meta_title;
 			}else{
 				$newProdData_en .=",";//.strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['nl'])));
