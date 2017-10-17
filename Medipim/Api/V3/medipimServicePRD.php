@@ -15,11 +15,17 @@ echo date('Y-m-d H:i:s')." (".time().")Starting sync".PHP_EOL;
  */
 $arg_count = $_SERVER['argc'];
 if($arg_count != 2){
-	echo "No sync argument provided";
-	die;
+	$inputsync = $_GET["sync"];
+	if(!empty($inputsync)){
+		$productcatsIDtosync = $inputsync;
+	}else{
+		echo "No sync argument provided";
+		die;
+	}
+}else{
+	$productcatsIDtosync=$_SERVER['argv'][1];//0=php script 1=first param ....
 }
-$productcatsIDtosync=$_SERVER['argv'][1];//0=php script 1=first param ....
-
+// $productcatsIDtosync=0;
 //TOOD update to have a date per type
 $updatedSince_handle = fopen("../config/medipimsync_updatedSince.csv","r");//keep unix timestamp of last sync per type
 $updatedSince="";
@@ -205,6 +211,9 @@ foreach ($cnks_groups as $key => $cnks){
 			$categories = "";
 			$categories_fr = "";
 			$categories_en = "";
+            $inputcatnl="";
+            $inputcatfr="";
+            $inputcaten="";
 			$meta_keywords=$product['name']['nl'];
 			$meta_keywords_fr=$product['name']['fr'];
 			$meta_keywords_en=$product['name']['en'];
@@ -224,23 +233,25 @@ foreach ($cnks_groups as $key => $cnks){
 						$_categorie_fr = "";
 						$_categorie_en = "";
 					}
-					
-					$_categorie = $catArray[$cat_id]['name']['nl'].$_categorie;
-					$meta_keywords .= ','.$catArray[$cat_id]['name']['nl'];
+					$inputcatnl=preg_replace('/\|/','-',$catArray[$cat_id]['name']['nl']);
+					$_categorie = $inputcatnl.$_categorie;
+					$meta_keywords .= ','.$inputcatnl;
 					if(!empty($catArray[$cat_id]['name']['fr'])){
-						$_categorie_fr = $catArray[$cat_id]['name']['fr'].$_categorie_fr;
-						$meta_keywords_fr .= ','.$catArray[$cat_id]['name']['fr'];
+                        $inputcatfr  = preg_replace('/\|/','-',$catArray[$cat_id]['name']['fr']);
+						$_categorie_fr = $inputcatfr;
+						$meta_keywords_fr .= ','.$inputcatfr;
 					}else{
-						$_categorie_fr = $catArray[$cat_id]['name']['nl'].$_categorie;
+						$_categorie_fr = $inputcatnl.$_categorie;
 					}
 					if(!empty($catArray[$cat_id]['name']['en'])){
-						$_categorie_en = $catArray[$cat_id]['name']['en'].$_categorie_en;
-						$meta_keywords_en .= ','.$catArray[$cat_id]['name']['en'];
+                        $inputcaten  = preg_replace('/\|/','-',$catArray[$cat_id]['name']['en']);
+						$_categorie_en = $inputcaten;
+						$meta_keywords_en .= ','.$inputcaten;
 					}else{
-						$_categorie_en = $catArray[$cat_id]['name']['nl'].$_categorie;
+						$_categorie_en = $inputcatnl.$_categorie;
 					}
 					if(!array_key_exists($cat_id,$category_used)){
-						$category_used[$cat_id]=$cat_id.";".$catArray[$cat_id]['name']['nl'].";".$_categorie_fr.";".$_categorie_en;
+						$category_used[$cat_id]=$cat_id.";".$inputcatnl.";".$inputcatfr.";".$inputcaten;
 					}
 					$cat_id = $catArray[$cat_id]['parent'];
 				}
@@ -249,7 +260,7 @@ foreach ($cnks_groups as $key => $cnks){
 					$partcnt = count($parts);
 					while($partcnt>1){
 						if(!empty($categories)){
-							$categories .= ";";
+							$categories .= "|";
 						}
 						$categories.="Default Category/";
 						for($j=0;$j<$partcnt-1;$j++){
@@ -268,8 +279,8 @@ foreach ($cnks_groups as $key => $cnks){
 			}
 			//fallback in case medipim has no cat
 			if(empty($categories)){
-				$categories="Default Category/Andere/".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']]['cat']];
-				$category_used[0]="0".";".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']]['cat']].";".$allcategories_fr[$cnks_details_groups[$key][$product['cnk']]['cat']].";".$allcategories_en[$cnks_details_groups[$key][$product['cnk']]['cat']];
+				$categories="Default Category/Andere/".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']+0]['cat']];
+				$category_used[0]="0".";".$allcategories_nl[$cnks_details_groups[$key][$product['cnk']+0]['cat']].";".$allcategories_fr[$cnks_details_groups[$key][$product['cnk']+0]['cat']].";".$allcategories_en[$cnks_details_groups[$key][$product['cnk']+0]['cat']];
 				
 			}
 			$newProdData .=",".'"Default Category|'.$categories.'"';
@@ -353,14 +364,14 @@ foreach ($cnks_groups as $key => $cnks){
 					}
 				}
 			}	
-			$newProdData .=",".'"'.preg_replace(array('/\n/','/"/'),array('',"'"),$full_description).'"';
+			$newProdData .=",".'"'.preg_replace(array('/\n/','/"/','/\|/'),array('',"'","-"),$full_description).'"';
 			$newProdData_nl .=",";
-			$newProdData_fr .=",".'"'.preg_replace(array('/\n/','/"/'),array('',"'"),$full_description_fr).'"';			
-			$newProdData_en .=",".'"'.preg_replace(array('/\n/','/"/'),array('',"'"),$full_description_en).'"';
-			$newProdData .=",".'"'.$product['short_description']['nl'].'"';
+			$newProdData_fr .=",".'"'.preg_replace(array('/\n/','/"/','/\|/'),array('',"'","-"),$full_description_fr).'"';			
+			$newProdData_en .=",".'"'.preg_replace(array('/\n/','/"/','/\|/'),array('',"'","-"),$full_description_en).'"';
+			$newProdData .=",".'"'.preg_replace(array('/\n/','/"/','/\|/'),array('',"","-"),$product['short_description']['nl'].'"').'"';
 			$newProdData_nl .=",";
-			$newProdData_fr .=",".'"'.$product['short_description']['fr'].'"';
-			$newProdData_en .=",".'"'.$product['short_description']['en'].'"';
+			$newProdData_fr .=",".'"'.preg_replace(array('/\n/','/"/','/\|/'),array('',"","-"),$product['short_description']['fr'].'"').'"';
+			$newProdData_en .=",".'"'.preg_replace(array('/\n/','/"/','/\|/'),array('',"","-"),$product['short_description']['en'].'"').'"';
 			$newProdData .=",".$product['weight'];
 			$newProdData_nl .=",";
 			$newProdData_fr .=",";//.$product['weight'];
@@ -396,15 +407,15 @@ foreach ($cnks_groups as $key => $cnks){
 			$newProdData_en .=",";//.'"Catalog, Search"';
 			
 			//calculate price based on provided discount
-			$price = round(($product['publicPrice']+($product['publicPrice']*$cnks_details_groups[$key][$product['cnk']]['discount']))/100,2);
+			$price = round(($product['publicPrice']+($product['publicPrice']*$cnks_details_groups[$key][$product['cnk']+0]['discount']))/100,2);
 			
 			//given public price is including vat, like magento expects
 			//$price = round($price/(1+$vat/100),2);
-			$newProdData .=",".$price;//price; 
+			$newProdData .=",".$product['publicPrice']/100;//price; 
 			$newProdData_nl .=",";
 			$newProdData_fr .=",";//.$price;//price; 
 			$newProdData_en .=",";//.$price;//price; 
-			$newProdData .=",";//.special_price;
+			$newProdData .=",".$price;//.special_price;
 			$newProdData_nl .=",";
 			$newProdData_fr .=",";//.special_price;
 			$newProdData_en .=",";//.special_price;
@@ -420,18 +431,19 @@ foreach ($cnks_groups as $key => $cnks){
 			$newProdData .=",".'"'.$product['name']['nl'].'"';//meta_title;
 			$newProdData_nl .=",";
 			$newProdData_nl .=",";
+			//using 1 url-key for all languages -- better to set <link rel="alternate" href="example.com/it/about-us" hreflang="it-it" />  in header 
+			//TODO https://support.google.com/webmasters/answer/189077?hl=en
+			//https://moz.com/learn/seo/hreflang-tag
+			$newProdData_fr .=",";//.strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['nl'])));
 			if(!empty($product['name']['fr'])){
-				$newProdData_fr .=",prd-".strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['fr'])));
 				$newProdData_fr .=",".'"'.$product['name']['fr'].'"';//meta_title;
 			}else{
-				$newProdData_fr .=",";//.strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['nl'])));	
 				$newProdData_fr .=",";//.'"'.$product['name']['nl'].'"';//meta_title;
 			}
+			$newProdData_en .=",";//.strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['nl'])));
 			if(!empty($product['name']['en'])){
-				$newProdData_en .=",prd-".strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['en'])));
 				$newProdData_en .=",".'"'.$product['name']['en'].'"';//meta_title;
 			}else{
-				$newProdData_en .=",";//.strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), ($product['name']['nl'])));
 				$newProdData_en .=",";//.'"'.$product['name']['nl'].'"';//meta_title;	
 			}
 			//$newProdData .=",".strtolower(preg_replace(array('/[^a-zA-Z0-9 -]/', '/[ -]+/', '/^-|-$/'),   array('', '-', ''), remove_accent($product['name']['nl'])));
@@ -467,8 +479,8 @@ foreach ($cnks_groups as $key => $cnks){
 			$newProdData .=",";//.small_image_label;
 			$newProdData .=",".$base_image;//.thumbnail_image;
 			$newProdData .=",";//.thumbnail_image_label;
-			$newProdData .=",".date("d.m.Y H:m",$product['meta'].['createdAt']+0);
-			$newProdData .=",".date("d.m.Y H:m",$product['meta'].['updatedAt']+0);
+			$newProdData .=",".date("d.m.Y H:m",$product['meta']['createdAt']);
+			$newProdData .=",".date("d.m.Y H:m",$product['meta']['updatedAt']);
 			$newProdData .=",";//.new_from_date;
 			$newProdData .=",";//.new_to_date;
 			$newProdData .=",";//.display_product_options_in;
