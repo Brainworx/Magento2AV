@@ -73,12 +73,12 @@ class Sync extends \Magento\Framework\Model\ResourceModel\Db\AbstractDb
      */
     protected function isValidSyncEntity(\Magento\Framework\Model\AbstractModel $object)
     {
-    	if($object->getData('entity') == "CAT" || strpos($object->getData('entity'), 'prod') !== false )
+    	if(strpos($object->getData('entity'), 'cat')  !== false || strpos($object->getData('entity'), 'prod') !== false )
     		return true;
     	else 
     		return false;
 //     	return preg_match('/^[0-9]+$/', $object->getData('entity'));
-    }
+    } 
     /**
      * Retrieve load select with filter by entity and ended (optional)
      *

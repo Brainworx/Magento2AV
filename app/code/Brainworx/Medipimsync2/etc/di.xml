@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Psr\Log\LoggerInterface" type="Magento\Framework\Logger\Monolog" />
+	<type name="Magento\Framework\Logger\Monolog">
+	   <arguments>
+	       <argument name="name" xsi:type="string">main</argument>
+	       <argument name="handlers"  xsi:type="array">
+	          <item name="system" xsi:type="object">Magento\Framework\Logger\Handler\System</item>
+	          <item name="debug" xsi:type="object">Magento\Framework\Logger\Handler\Debug</item>
+	       </argument>
+	   </arguments>
+	</type>
     <preference for="Brainworx\Medipimsync2\Api\Data\SyncInterface" type="Brainworx\Medipimsync2\Model\Sync" />
 	<virtualType name="Medipimsync2GridFilterPool" type="Magento\Framework\View\Element\UiComponent\DataProvider\FilterPool">
         <arguments>
@@ -28,4 +38,13 @@
             </argument>
         </arguments>
     </type>
+        <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="command_line_translate" xsi:type="object">Brainworx\Medipimsync2\Commands\CommandLineTranslate</item>
+            	<item name="command_line_import" xsi:type="object">Brainworx\Medipimsync2\Commands\CommandLineImport</item>
+            </argument>
+        </arguments>
+    </type>
+    <preference for="Magento\ImportExport\Model\Import" type="Brainworx\Medipimsync2\Model\Import" />
 </config>
