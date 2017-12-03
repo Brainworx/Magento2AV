@@ -183,8 +183,16 @@ class CommandLineTranslate extends Command
     		$id = self::loadCategoryIDByName($incat['nl']);//0=id,1=nl,2=fr,3=en -- $catfile = fopen("../import/categories".$productcatsIDtosync.".csv","w");
     		if($id!=false){
     			$category = $this->_objectManager->get('Magento\Catalog\Model\Category')->load($id);
-    			if($category->getConsumerCategoryId()==0){
-    				$category->setConsumerCategoryId($incat['id']);
+    			if(!($incat['nl']!=$incat['fr'] && $incat['nl']!=$incat['en'])){
+    				$this->_logger->debug("Cat nl not different from en or fr: :".$incat['nl']."-".$incat['fr']."-".$incat['en']);
+    			}
+    			 
+    			if($category->getConsumerCategoryId()==0 ){
+    				//only set consumer cat id when translation is ok from Medipim
+    				//TODO
+    				if($incat['nl']!=$incat['fr'] && $incat['nl']!=$incat['en']){
+    					$category->setConsumerCategoryId($incat['id']);
+    				}
     				$update = true;
     				$category->setLastUpdatedAt(date("Y-m-d H:i:s", strtotime(time())));
     				
