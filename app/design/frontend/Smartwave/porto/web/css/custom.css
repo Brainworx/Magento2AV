@@ -2750,12 +2750,12 @@ body > .onepage-cat.category-list {
 #ln_price_slider.ui-slider-horizontal {
     height: 7px;
     margin-bottom: 15px;
-    background: #8FB500;
+    background: #afc80a;
     box-shadow: inset 0px 1px 2px 0px rgba(0,0,0,.38);
 }
 
 .footer-ribbon::before {
-    border-right: 10px solid #8FB500;
+    border-right: 10px solid #afc80a;
 
 }
 #ln_price_attribute {
