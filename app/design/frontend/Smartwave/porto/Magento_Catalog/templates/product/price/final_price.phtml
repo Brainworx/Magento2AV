@@ -20,8 +20,12 @@ $priceModel = $block->getPriceType('regular_price');
 $finalPriceModel = $block->getPriceType('final_price');
 $idSuffix = $block->getIdSuffix() ? $block->getIdSuffix() : '';
 $schema = ($block->getZone() == 'item_view') ? true : false;
+$amount=$priceModel->getAmount();
+$specialamount=$finalPriceModel->getAmount();
+
+if ($block->hasSpecialPrice()): 
+$d=round( (($amount->getValue()-$specialamount->getValue()) / $amount->getValue())*100);
 ?>
-<?php if ($block->hasSpecialPrice()): ?>
     <span class="old-price">
         <?php echo $block->renderAmount($priceModel->getAmount(), [
             'display_label'     => __('Regular Price'),
@@ -40,6 +44,8 @@ $schema = ($block->getZone() == 'item_view') ? true : false;
             'schema' => $schema
         ]); ?>
     </span>
+    <span class="special-price-discount"><?php echo '-'.$d.'%';?></span>
+   
 <?php else: ?>
     <?php echo $block->renderAmount($finalPriceModel->getAmount(), [
         'price_id'          => $block->getPriceId('product-price-' . $idSuffix),

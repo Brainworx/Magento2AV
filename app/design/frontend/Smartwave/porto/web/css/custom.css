@@ -2758,6 +2758,10 @@ body > .onepage-cat.category-list {
     border-right: 10px solid #afc80a;
 
 }
+.special-price-discount{
+	color: #ff0000;
+	font-size:1.7rem;
+}
 #ln_price_attribute {
     padding: 10px 5px;
 }
