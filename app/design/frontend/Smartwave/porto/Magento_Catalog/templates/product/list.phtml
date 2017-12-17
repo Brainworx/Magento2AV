@@ -21,6 +21,7 @@ $_helper = $this->helper('Magento\Catalog\Helper\Output');
 $_imagehelper = $this->helper('Magento\Catalog\Helper\Image');
 
 $_category_config = $this->helper('Smartwave\Porto\Helper\Data')->getConfig('porto_settings/category');
+$compare=false;//$_category_config['addtocompare'];
 $_category_grid_config = $this->helper('Smartwave\Porto\Helper\Data')->getConfig('porto_settings/category_grid');
 $_product_label_config = $this->helper('Smartwave\Porto\Helper\Data')->getConfig('porto_settings/product_label');
 $move_actions = "";
@@ -158,13 +159,14 @@ $flex_grid = "";
                                 <?php endif; ?>
                                 <?php endif; ?>
                                 <?php endif; ?>
-                                <?php if($_category_config['addtocompare']): ?>
+                                <?php if($compare): ?>
                                 <?php
                                 $compareHelper = $this->helper('Magento\Catalog\Helper\Product\Compare');
                                 ?>
                                 <a href="#"
                                    class="action tocompare actions-secondary"
                                    title="<?php echo $block->escapeHtml(__('Add to Compare')); ?>"
+                                   alt="<?php echo $block->escapeHtml(__('Add to Compare')); ?>"
                                    aria-label="<?php echo $block->escapeHtml(__('Add to Compare')); ?>"
                                    data-post='<?php echo $compareHelper->getPostDataParams($_product); ?>'
                                    role="button">
@@ -268,7 +270,7 @@ $flex_grid = "";
                                 <?php endif; ?>
                                 <?php endif; ?>
                                 <?php endif; ?>
-                                <?php if($_category_config['addtocompare']): ?>
+                                <?php if($compare): ?>
                                 <?php
                                 $compareHelper = $this->helper('Magento\Catalog\Helper\Product\Compare');
                                 ?>
