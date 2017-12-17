@@ -941,7 +941,7 @@ body.boxed .page-wrapper {
 <div class="row" style="margin: 0 -10px;">
     <div class="col-md-3" style="padding: 0 10px;">
         <div class="home-side-menu">
-            <h2 class="side-menu-title">CATEGORIES</h2>
+            <h2 class="side-menu-title">ApoVita</h2>
             {{block class="Smartwave\Megamenu\Block\Topmenu" name="sw.sidenav" template="Smartwave_Megamenu::sidemenu.phtml" ttl="3600"}}
         </div>
     </div>
