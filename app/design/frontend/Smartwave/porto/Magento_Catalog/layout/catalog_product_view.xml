@@ -13,7 +13,7 @@
         <referenceContainer name="sidebar.additional">
             <block class="Smartwave\Porto\Block\Template" name="product_view_custom_block" before="-" template="Magento_Catalog::product/view/custom_block.phtml"/>
         </referenceContainer>
-        <move element="product.info.stock.sku" destination="product.info.price" after="product.price.final"/>
+        <referenceBlock name="product.info.stock.sku" remove="true"/>
         <move element="product.info.review" destination="product.info.main" before="product.info.price"/>
         <move element="catalog.product.related" destination="sidebar.additional" after="product_view_custom_block"/>
         <referenceContainer name="after.body.start">
