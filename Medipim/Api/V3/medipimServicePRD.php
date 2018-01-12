@@ -58,8 +58,11 @@ try{
 	$temp;
 	while (($buffer = fgets($updatedSince_handle)) !== FALSE ) {
 		$temp = explode(";",$buffer);
+		if($buffer=="\n"|| $buffer ==";\n"){
+			continue;
+		}
 		$productcatsIDStosync[$temp[0]]=$temp[1];
-		if($temp[0]==$productcatsIDtosync){
+		if($temp[0]===$productcatsIDtosync){
 			$updatedSince = $temp[1];
 		}
 	}
@@ -206,10 +209,12 @@ try{
 		$processed = 0;
 		$pagecounter = 0;
 		do{
-			$cnks=[ "3367596", "2881886"];
 			$subfilter=[array("cnk"=>$cnks), array("updatedSince"=>$updatedSince)];
-			$filter = array("filter"=>array("and"=>$subfilter),"page"=>array("no"=>$pagecounter,"size"=>$size));
-			//$filter = array("filter"=>array("cnk"=>$cnks),"page"=>array("no"=>$pagecounter,"size"=>$size));
+			if($updatedSince!=""){
+				$filter = array("filter"=>array("and"=>$subfilter),"page"=>array("no"=>$pagecounter,"size"=>$size));
+			}else{
+				$filter = array("filter"=>array("cnk"=>$cnks),"page"=>array("no"=>$pagecounter,"size"=>$size));
+			}
 			
 			$r = $client->post("/v3/products/search", $filter);
 			
