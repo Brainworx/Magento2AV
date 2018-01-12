@@ -130,6 +130,8 @@ class MedipimApiV3Client
             curl_setopt($handle, CURLOPT_INFILESIZE, filesize($request->bodyFile));
         } else if (isset($request->bodyJson)) {
             curl_setopt($handle, CURLOPT_HTTPHEADER, ["Content-type: application/json"]);
+//             $filter = json_encode($request->bodyJson);
+//             echo $filter;
             curl_setopt($handle, CURLOPT_POSTFIELDS, json_encode($request->bodyJson));
         }
 

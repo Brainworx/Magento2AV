@@ -15,6 +15,7 @@ http://192.168.56.101/Magento2AV/Medipim/Api/V3/medipimServicePRD.php?sync=1&syn
 chdir(__DIR__);
 echo "dir: ".__DIR__.' - ';
 require_once 'MedipimApiV3Client.php';
+require_once 'MedipimApiV3Error.php';
 
 try{
 	
@@ -25,7 +26,9 @@ try{
 	echo date('Y-m-d H:i:s')." (".time().")Starting sync".PHP_EOL;
 	
 	/*
-	 * get input from url - productcats to sync
+	 * get input from url ************************************************************************************************
+	 * - p line nr of roductcatsto sync to load from file medipimsync_productcatstosync
+	 * - 1/0 sync photo's
 	 */
 	$syncphoto=true;
 	$arg_count = $_SERVER['argc'];
@@ -45,8 +48,9 @@ try{
 		$productcatsIDtosync=$_SERVER['argv'][1];//0=php script 1=first param ....
 		$syncphoto=$_SERVER['argv'][2]; // sync photo true or false
 	}
-	// $productcatsIDtosync=0;
-	//TOOD update to have a date per type
+	/*
+	 * Load timestamp last sync for this product cat id in medipimsync_productcatstosync*********************************
+	 */
 	$updatedSince_handle = fopen("../config/medipimsync_updatedSince.csv","r");//keep unix timestamp of last sync per type
 	$updatedSince="";
 	$buffer;
@@ -65,6 +69,8 @@ try{
 	
 	/*
 	 * read categories **************************************************************************************************
+	 * Get all categories from Medipim
+	 * Add them in an array with key CAT id
 	 */
 	$r = $client->get("/v3/public-categories/all");
 	
@@ -72,26 +78,10 @@ try{
 	$meta = $r['meta'];
 	$catArray = array();
 	
-	// $newCatData="";
-	// $catfile = fopen("../test/categoriesv.csv","w");
-	// $titles = "cat_id,parent_id,name_nl,name_fr,name_en,created_at,last_updated_at";
-	// fwrite($catfile,$titles.PHP_EOL);
-	unset($titles);
-	
 	$parent_cats=0;
 	foreach($catList as $key=>$categorie){
 		$catArray[$categorie['id']]=$categorie;
-	// 	$newCatData .=$categorie['id'];
-	// 	$newCatData .=$categorie['parent'];
-	// 	$newCatData .=$categorie['name']['nl'];
-	// 	$newCatData .=$categorie['name']['fr'];
-	// 	$newCatData .=$categorie['name']['en'];
-	// 	$newCatData .=$categorie['meta']['createdAt'];
-	// 	$newCatData .=$categorie['meta']['updatedAt'];
-	// 	fwrite($catfile, $newCatData.PHP_EOL);
-	// 	unset($newCatData);
 	}
-	// fclose($catfile);
 	
 	unset($r);
 	
@@ -100,17 +90,17 @@ try{
 	 */ 
 	$productOnline = "";
 	/*
-	 * read products to sync *******************************************************
+	 * load categories to sync*********************************************************
 	 */
 	$productcatstosync_handle = fopen("../config/medipimsync_productcatstosync.csv","r");
-	$allcategories;// = array("dieet","baby"/*,"haarhuid","homeo","kruiden","mond","reis","sport","voedingssupplementen"*/);
+	$allcategories;
 	
 	$buffer;
 	$rowcounter=0;
 	while (($data = fgetcsv($productcatstosync_handle, 0, ",")) !== FALSE ) {
 		if($rowcounter == $productcatsIDtosync){
 			$allcategories=$data;
-	        echo ' '.$productcatsIDtosync.' '.explode(",",$data).' ';
+	        echo ' '.$productcatsIDtosync.' ';
 			break;
 		}
 		$rowcounter++;
@@ -122,7 +112,9 @@ try{
 		die;
 	}
 	/*
-	 * read products to sync *********************************************"**********
+	 * read product cnks to sync *********************************************"**********
+	 * from files per cat (dieet.csv, baby.csv ....)
+	 * group per 1024 to avoid throthle issues
 	 */
 	//prepare filter
 	$cnks_groups = array(); // group cnks to limit the array to 1024 values
@@ -136,6 +128,7 @@ try{
 	//Group cnks to sync into small groups of 1024
 	foreach($allcategories as $key => $maincategory){
 		if (($handle = fopen("../config/".$maincategory.".csv", "r")) !== FALSE) {
+			echo "-adding cnks for ".$maincategory;
 			while (($data = fgetcsv($handle, 0, ";")) !== FALSE ) {
 				if(!$newgroup && $teller_cnks%1024==0){
 					$newgroup=true;
@@ -188,14 +181,26 @@ try{
 	$newProdData_fr="";
 	$newProdData_en="";
 	
-	$prodfile = fopen("../import/products".$productcatsIDtosync.".csv","w");
+	//keep track of sync time
+	$now=time();
+	/*
+	 * Prepare the file to store the output from Medipim
+	 */
+	//strore previous synced products
+	$loc="../import/products".$productcatsIDtosync.".csv";
+	if(file_exists($loc)){
+		rename($loc,"../import/products".$productcatsIDtosync."_".date("Y_m_d")."_".$now.".csv");
+	}
+	$prodfile = fopen($loc,"w");
 	fputs( $prodfile, "\xEF\xBB\xBF" );
 	$titles = "sku,store_view_code,attribute_set_code,product_type,categories,product_websites,name,description,short_description,weight,product_online,tax_class_name,visibility,price,special_price,special_price_from_date,special_price_to_date,url_key,meta_title,meta_keywords,meta_description,base_image,base_image_label,small_image,small_image_label,thumbnail_image,thumbnail_image_label,created_at,updated_at,new_from_date,new_to_date,display_product_options_in,map_price,msrp_price,map_enabled,gift_message_available,custom_design,custom_design_from,custom_design_to,custom_layout_update,page_layout,product_options_container,msrp_display_actual_price_type,country_of_manufacture,additional_attributes,qty,out_of_stock_qty,use_config_min_qty,is_qty_decimal,allow_backorders,use_config_backorders,min_cart_qty,use_config_min_sale_qty,max_cart_qty,use_config_max_sale_qty,is_in_stock,notify_on_stock_below,use_config_notify_stock_qty,manage_stock,use_config_manage_stock,use_config_qty_increments,qty_increments,use_config_enable_qty_inc,enable_qty_increments,is_decimal_divided,website_id,related_skus,crosssell_skus,upsell_skus,additional_images,additional_image_labels,custom_options,configurable_variations,configurable_variation_prices,configurable_variation_labels,bundle_price_type,bundle_sku_type,bundle_price_view,bundle_weight_type,bundle_values";
 	fwrite($prodfile,$titles.PHP_EOL);
 	
-	//keep track of sync time
-	$now=time();
-	//Get data from medipim per group of 1024 cnks
+	/*
+	 * Load product data from Medipim ******************************************
+	 * Get data from medipim per group of 1024 cnks
+	 * remove new line chars from output as html contains them
+	 */
 	foreach ($cnks_groups as $key => $cnks){
 		$quantity_medipim = 0;
 		$processed = 0;
@@ -206,10 +211,8 @@ try{
 			$filter = array("filter"=>array("and"=>$subfilter),"page"=>array("no"=>$pagecounter,"size"=>$size));
 			//$filter = array("filter"=>array("cnk"=>$cnks),"page"=>array("no"=>$pagecounter,"size"=>$size));
 			
-			//echo ["filter" => ["cnk" => json_encode($cnks)],"page" => ["no" => $processed,"size" => $size]];
 			$r = $client->post("/v3/products/search", $filter);
 			
-			//$r = $client->post("/v3/products/search", ["filter" => ["cnk" => implode(",",$cnks)],"page" => ["no" => $processed,"size" => $size]]);
 			$prodList = $r['results'];//json_decode($r);
 			$meta = $r['meta'];
 			$quantity_medipim=$meta['total'];
@@ -757,6 +760,9 @@ try{
 				$newProdData_en .=",";//.bundle_values;
 				$newProdData_en .=PHP_EOL;
 				
+				/*
+				 * Write the product 
+				 */
 				fwrite($prodfile, $newProdData);
 				fwrite($prodfile, $newProdData_nl);
 				fwrite($prodfile, $newProdData_fr);
@@ -773,6 +779,9 @@ try{
 		}while($processed < $quantity_medipim);
 		$total_products+=$processed;
 	}
+	/*
+	 * Store categories as received form Medipim and identified as used by the synced products
+	 */
 	$catfile = fopen("../import/categories".$productcatsIDtosync.".csv","w");
 	fputs( $catfile, "\xEF\xBB\xBF" );
 	fwrite($catfile,"id;nl;fr;en".PHP_EOL);
@@ -783,8 +792,12 @@ try{
 	echo "End processing ".$total_products.PHP_EOL;
 	fclose($prodfile);
 	fclose($catfile);
-	
+	echo "-closed prod/cat files";
+	/*
+	 * Store the updated since timestamp********************************************************
+	 */
 	$updatedSince_handle = fopen("../config/medipimsync_updatedSince.csv","w");//keep unix timestamp of last sync per type
+	fputs( $updatedSince_handle, "\xEF\xBB\xBF" );
 	//first time sync
 	if(empty($productcatsIDStosync) || !array_key_exists($productcatsIDtosync,$productcatsIDStosync)){
 		fwrite($updatedSince_handle, $productcatsIDtosync.";".$now.PHP_EOL);
@@ -798,6 +811,7 @@ try{
 		}
 	}
 	fclose($updatedSince_handle);
+	echo "-updated timestamp ".$now;
 
 } catch (Exception $e) {
     echo 'Caught exception in MedipimSync: ',  $e->getMessage(), "\n";
